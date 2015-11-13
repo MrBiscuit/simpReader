@@ -1,0 +1,134 @@
+//
+//  LiteraryTableViewController.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 15/10/22.
+//  Copyright © 2015年 com.sunshuaiqi. All rights reserved.
+//
+
+#import "LiteraryTableViewController.h"
+#import "Literary.h"
+#import "LiteraryTableViewCell.h"
+#import "LiteraryNextTableViewController.h"
+@interface LiteraryTableViewController ()
+@property (nonatomic,strong) NSMutableArray * modelArray;
+@end
+
+@implementation LiteraryTableViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+   self.tableView.contentInset = UIEdgeInsetsMake(0, 0, 44, 0);
+   
+    // 解析数据
+    [self parseData];
+    
+}
+
+#pragma mark -- 解析数据
+- (void)parseData{
+
+    NSURL * url = [NSURL URLWithString:kLiteraryUrl];
+    
+    NSURLRequest * request = [[NSURLRequest alloc] initWithURL:url];
+    __weak LiteraryTableViewController * weakSelf = self;
+    NSURLSessionDataTask * task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+        
+        if (data != nil) {
+            
+            NSDictionary * dict = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableContainers error:nil];
+            NSArray * dataArray = dict[@"data"];
+            
+            weakSelf.modelArray = [NSMutableArray array];
+            for (NSDictionary * dic in dataArray) {
+                
+                Literary * model = [Literary new];
+                
+                [model setValuesForKeysWithDictionary:dic];
+                
+                [weakSelf.modelArray addObject:model];
+                
+            }
+            
+          
+        }
+        
+        // 主线程刷新数据
+        dispatch_async(dispatch_get_main_queue(), ^{
+            
+            // 刷新数据
+            [weakSelf.tableView reloadData];
+        });
+        
+        
+    }];
+    
+    // 开始执行
+    [task resume];
+    
+  
+   
+
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+#pragma mark - Table view data source
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+
+    return 1;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+
+    return _modelArray.count;
+}
+
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    LiteraryTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"cell"];
+    if (cell == nil) {
+        
+        cell = [[LiteraryTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"cell"];
+    }
+  
+    
+    Literary * model = _modelArray[indexPath.row];
+    cell.model = model;
+    
+    return cell;
+}
+
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+
+    return 140;
+}
+
+#pragma mark -- 点击cell跳转
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+
+    LiteraryNextTableViewController * nextTVC = [LiteraryNextTableViewController new];
+
+    UINavigationController * NC = [[UINavigationController alloc] initWithRootViewController:nextTVC];
+    
+    nextTVC.modalTransitionStyle = UIModalTransitionStyleFlipHorizontal;
+    
+    Literary * model = _modelArray[indexPath.row];
+    
+    nextTVC.imgUrl = model.cover_url;
+    nextTVC.modelID = model.ID;
+    nextTVC.titleName = model.name;
+    [self showViewController:NC sender:nil];
+}
+
+
+
+@end

@@ -1,0 +1,108 @@
+//
+//  FavoriteHandle.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 15/10/29.
+//  Copyright © 2015年 com.sunshuaiqi. All rights reserved.
+//
+
+#import "FavoriteHandle.h"
+
+#import "LiteraryNextModel.h"
+#import "MoodLogModel.h"
+
+@interface FavoriteHandle ()
+
+@property (nonatomic,strong) LiteraryNextModel * literaryModel;
+@property (nonatomic,strong) MoodLogModel * moodLogModel;
+
+@end
+
+@implementation FavoriteHandle
+
+#pragma mark -- 创建单例
+static FavoriteHandle * handle = nil;
+
++ (FavoriteHandle *)sharedHandle
+{
+
+    static dispatch_once_t predicated;
+    dispatch_once(&predicated, ^{
+       
+        handle = [[FavoriteHandle alloc] init];
+        
+    });
+
+    return handle;
+}
+
+
+#pragma mark -- 创建数据库
+- (void)createDB
+{
+
+    // 找到document的路径
+    NSString * documentPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).lastObject;
+    
+    // 数据库存放地址
+    NSString * filePath = [documentPath stringByAppendingPathComponent:@"Favorite.db"];
+    
+    // 创建数据库
+    self.dataBase = [FMDatabase databaseWithPath:filePath];
+    
+    // 打开数据库的情况
+    if ([self.dataBase open] == YES) {
+        
+        print(@"数据库创建成功");
+    }
+    
+    print(@"数据库所在路径：%@",filePath);
+
+    
+    // 创建表 (列名，类型)
+     // （1）存放文章的表
+    [self.dataBase executeUpdate:@"create table ArticleList (ID text PRIMARY KEY , title text, imageUrl text)"];
+    
+    // （2）存放视频的表
+    [self.dataBase executeUpdate:@"create table VideoList (ID text PRIMARY KEY,title text,imageUrl text)"];
+    
+
+}
+
+
+#pragma mark -- 向表中添加数据
+- (void)insertDataWithModel:(NSObject *)model tag:(NSInteger)tag url:(NSString *)urlString
+{
+
+    switch (tag) {
+        case 100:{
+        
+            self.literaryModel = (LiteraryNextModel *)model;
+            print(@"model:100 ----%@",self.literaryModel);
+            [self createDB];
+            // 添加数据
+            [self.dataBase executeUpdate:@"insert into ArticleList (urlString, title, imageUrl) values (%ld, %@, %@)", _literaryModel.ID, _literaryModel.text, _literaryModel.image_url];
+            
+            break;
+        }
+        case 101:{
+            
+            break;
+        }
+        default:
+            break;
+    }
+    
+    
+
+}
+
+
+#pragma mark -- 查询数据库
+- (void)queryDBWithTag:(NSInteger)tag
+{
+
+
+}
+
+@end

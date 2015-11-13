@@ -1,0 +1,131 @@
+//
+//  LoginViewController.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 10/26/15.
+//  Copyright © 2015 com.sunshuaiqi. All rights reserved.
+//
+
+#import "LoginViewController.h"
+#import "CustomTextField.h"
+
+@interface LoginViewController ()
+@property(nonatomic, strong) CustomTextField *usernameLabel;
+@property(nonatomic, strong) CustomTextField *userPasswordLabel;
+@property(nonatomic, strong) CustomTextField *confirmPasswordLabel;
+
+@property(nonatomic, strong) UILabel *nameLabel;
+@property(nonatomic, strong) UIView *bottomLine;
+@property(nonatomic, strong) UIView *bottomLineAnimation;
+
+@property(nonatomic, strong) UIButton *loginButton;
+@property(nonatomic, strong) UILabel *titleLabel;
+@property(nonatomic, assign) CGFloat keyboardHeight;
+@property(nonatomic, assign) BOOL keyboardHasShown;
+
+@end
+
+@implementation LoginViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    _usernameLabel = [CustomTextField textFiledWithFrame:CGRectMake(50, 100, 250, 60) Name:@"Account name" color:[UIColor colorWithRed:0.0 green:0.6784 blue:0.8980 alpha:1.0]];
+    [self.view addSubview:_usernameLabel];
+    
+    _userPasswordLabel = [CustomTextField textFiledWithFrame:CGRectMake(50, 150, 250, 60) Name:@"Password" color:[UIColor colorWithRed:0.8093 green:0.1066 blue:0.1367 alpha:1.0]];
+    [self.view addSubview:_userPasswordLabel];
+    _userPasswordLabel.secureTextEntry = YES;
+    
+    _confirmPasswordLabel = [CustomTextField textFiledWithFrame:CGRectMake(50, 200, 250, 60) Name:@"Confirm password" color:[UIColor colorWithRed:0.8093 green:0.1066 blue:0.1367 alpha:1.0]];
+    [self.view addSubview:_confirmPasswordLabel];
+    _confirmPasswordLabel.hidden = YES;
+    _confirmPasswordLabel.secureTextEntry = YES;
+    
+    _titleLabel = [UILabel new];
+    _titleLabel.text = @"INDEFINITEPROGRAM";
+    _titleLabel.textAlignment = NSTextAlignmentCenter;
+    _titleLabel.textColor = [UIColor colorWithRed:0.1121 green:0.1121 blue:0.1121 alpha:1.0];
+    _titleLabel.font = [UIFont fontWithName:@"Helvetica-Bold" size:25];
+    [self.view addSubview:_titleLabel];
+    
+    [_userPasswordLabel mas_makeConstraints:^(MASConstraintMaker *make){
+        make.centerY.equalTo(self.view);
+        make.centerX.equalTo(self.view);
+        make.width.mas_equalTo(self.view.frame.size.width * 0.6);
+        make.height.mas_equalTo(60);
+    }];
+    [_usernameLabel mas_makeConstraints:^(MASConstraintMaker *make){
+        make.bottom.equalTo(_userPasswordLabel.mas_top).offset(-10);
+        make.size.equalTo(_userPasswordLabel);
+        make.left.equalTo(_userPasswordLabel);
+    }];
+    [_confirmPasswordLabel mas_makeConstraints:^(MASConstraintMaker *make){
+        make.center.equalTo(_userPasswordLabel);
+        make.size.equalTo(_userPasswordLabel);
+    }];
+    
+    [_titleLabel mas_makeConstraints:^(MASConstraintMaker *make){
+        make.bottom.equalTo(_usernameLabel.mas_top).offset(-55);
+        make.centerX.equalTo(_userPasswordLabel);
+        make.width.mas_equalTo(self.view.frame.size.width);
+        make.height.mas_equalTo(50);
+    }];
+    self.view.backgroundColor = [UIColor whiteColor];
+    self.usernameLabel.delegate = self;
+    self.userPasswordLabel.delegate = self;
+    self.confirmPasswordLabel.delegate = self;
+    
+    UIPanGestureRecognizer *panRcgnzr = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panAction:)];
+    panRcgnzr.delegate = self;
+    [self.view addGestureRecognizer:panRcgnzr];
+    
+    _loginButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    
+    [self.view addSubview:_loginButton];
+    [_loginButton mas_makeConstraints:^(MASConstraintMaker *make){
+        make.centerX.equalTo(self.view);
+        make.top.equalTo(_confirmPasswordLabel.mas_bottom).offset(25);
+        make.width.mas_equalTo(CGRectGetWidth(_confirmPasswordLabel.frame) / 2 +6);
+        make.height.mas_equalTo(30);
+    }];
+    
+    _loginButton.backgroundColor = [UIColor colorWithRed:0.0 green:0.6784 blue:0.8980 alpha:1.0];
+    [_loginButton setTitle:@"LOGIN/REGISTER" forState:UIControlStateNormal];
+    [_loginButton setTintColor:[UIColor whiteColor]];
+    [_loginButton addTarget:self action:@selector(didClickLoginButton:) forControlEvents:UIControlEventTouchUpInside];
+    _loginButton.hidden = YES;
+    
+    
+#pragma mark CoreData 属性初始化
+    /*_appDel = [UIApplication sharedApplication].delegate;
+    _context = _appDel.managedObjectContext;
+    _usernameArray = [NSMutableArray new];
+    _alertLock = NO;
+    _registerLock = NO;
+    
+#pragma mark CoreData 数据提取
+    
+    if (results.count > 0) {
+        for (NSManagedObject *item in results) {
+            [_usernameArray addObject:[item valueForKey:@"username"]];
+        }
+    }*/
+
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

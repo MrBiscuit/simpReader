@@ -1,0 +1,96 @@
+//
+//  PictureBrowsingViewController.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 15/10/25.
+//  Copyright © 2015年 com.sunshuaiqi. All rights reserved.
+//
+
+#import "PictureBrowsingViewController.h"
+
+@interface PictureBrowsingViewController ()
+
+@property (nonatomic,strong) UILabel * titleLabel; // 介绍文字
+
+@property (nonatomic,strong) UIScrollView * scrollView; // 滚动视图
+
+@property (nonatomic,strong) UIImageView * imgView; // 图片视图
+
+@end
+
+@implementation PictureBrowsingViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    self.view.backgroundColor = [UIColor blackColor];
+   
+    // 返回按钮
+    UIBarButtonItem * backBI = [[UIBarButtonItem alloc] initWithTitle:@"返回" style:UIBarButtonItemStylePlain target:self action:@selector(didClickBackBI)];
+    self.navigationItem.leftBarButtonItem = backBI;
+    
+    [self parseData];
+    [self addSubViews];
+    
+}
+
+
+// 添加
+- (void)addSubViews
+{
+
+    // 滚动视图
+    self.scrollView = [UIScrollView new];
+    [self.view addSubview:_scrollView];
+    _scrollView.backgroundColor = [UIColor whiteColor];
+    [_scrollView mas_makeConstraints:^(MASConstraintMaker *make) {
+       
+        make.top.equalTo(self.view).offset(64);
+        make.left.and.right.equalTo(self.view);
+        make.bottom.equalTo(self.view.mas_bottom).offset(-120);
+        
+    }];
+    
+    self.titleLabel = [UILabel new];
+    self.titleLabel.textColor = [UIColor whiteColor];
+    self.titleLabel.font = [UIFont systemFontOfSize:20];
+    self.titleLabel.text = @"   新的一天新的开始";
+    [self.view addSubview:_titleLabel];
+    [_titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+       
+        make.top.equalTo(self.scrollView.mas_bottom);
+        make.left.and.bottom.and.right.equalTo(self.view);
+        
+    }];
+    
+
+}
+
+
+// 返回事件
+- (void)didClickBackBI
+{
+
+    [self dismissViewControllerAnimated:YES completion:nil];
+    
+}
+
+// 获取数据
+- (void)parseData
+{
+
+    
+
+}
+
+
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+
+
+@end

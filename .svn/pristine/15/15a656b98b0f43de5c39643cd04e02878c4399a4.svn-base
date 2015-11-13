@@ -1,0 +1,202 @@
+//
+//  EncouragementDetailViewController.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 15/10/28.
+//  Copyright © 2015年 com.sunshuaiqi. All rights reserved.
+//
+
+#import "EncouragementDetailViewController.h"
+
+#define kEncouragementDetailUrl(ID) [NSString stringWithFormat:@"http://apiv3.pento.cn/api/pin/content/%ld/show.json?token=Kx2S9nE0iHgbbSbeDdh2",ID]
+
+@interface EncouragementDetailViewController ()<UIWebViewDelegate>
+
+@property (nonatomic,strong) UIWebView * webView; // 网页视图
+@property (nonatomic,strong) UIActivityIndicatorView *activityIndicatorView; // 进度轮
+@property (nonatomic,strong) UIView *opaqueview; // 透明视图
+
+@end
+
+@implementation EncouragementDetailViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    // 返回按钮
+    UIBarButtonItem * backBI = [[UIBarButtonItem alloc] initWithImage:[AlphaIcons imageOfBackArrowWithFrame:CGRectMake(0, 0, 25, 25)] style:UIBarButtonItemStylePlain target:self action:@selector(didClickBackBI)];
+    backBI.tintColor = [UIColor whiteColor];
+    self.navigationItem.leftBarButtonItem = backBI;
+    
+   
+    
+    // 收藏按钮
+    UIBarButtonItem * favoriteBI = [[UIBarButtonItem alloc] initWithTitle:@"收藏" style:UIBarButtonItemStylePlain target:self action:@selector(didClickFavorite)];
+    self.navigationItem.rightBarButtonItem = favoriteBI;
+    
+    
+    [self addSubViews];
+    [self parseData];
+}
+
+// 返回事件
+- (void)didClickBackBI
+{
+    [self.navigationController popViewControllerAnimated:YES];
+
+}
+
+#pragma mark -- 收藏事件
+- (void)didClickFavorite
+{
+
+
+
+}
+
+#pragma mark -- 添加控件
+- (void)addSubViews
+{
+
+    self.webView = [[UIWebView alloc] initWithFrame:self.view.frame];
+    
+    
+    // 让网页自己适配
+    self.webView.scalesPageToFit = YES;
+    
+    // 顶端禁止下拉
+    self.webView.scrollView.bounces = NO;
+        
+    // 设置代理，用来执行网页加载完成代理方法（控制网页大小）
+    self.webView.delegate = self;
+    
+    self.webView.scrollView.contentInset = UIEdgeInsetsMake(0, 0, 0, 0);
+    
+    self.webView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    
+     //是否支持交互
+    [self.webView setUserInteractionEnabled:YES];
+    
+    //Opaque为不透明的意思，这里为透明
+    [self.webView setOpaque:NO];
+    _webView.backgroundColor = [UIColor colorWithRed:0.615 green:0.844 blue:1.000 alpha:1.000];
+    
+    // 添加网页
+    [self.view addSubview:self.webView];
+    
+    
+    //opaqueview 用以做UIActivityIndicatorView的容器view
+    _opaqueview = [[UIView alloc] initWithFrame:self.view.frame];
+    
+    _activityIndicatorView = [[UIActivityIndicatorView alloc] initWithFrame:self.view.frame];
+    [_activityIndicatorView setCenter:_opaqueview.center];
+    
+    //颜色根据不同的界面自己调整（进度轮颜色）
+    [_activityIndicatorView setActivityIndicatorViewStyle: UIActivityIndicatorViewStyleGray];
+    
+    [_opaqueview setBackgroundColor:[UIColor colorWithRed:0.615 green:0.844 blue:1.000 alpha:1.000]];
+   // [_opaqueview setAlpha: 0.6 ];
+    [self.view  addSubview:_opaqueview];
+    [_opaqueview addSubview:_activityIndicatorView];
+    
+    
+}
+
+#pragma mark -- 解析数据
+- (void)parseData
+{
+
+    AFHTTPSessionManager * manager = [AFHTTPSessionManager manager];
+    [manager GET:kLiteraryDetailUrl(self.ID) parameters:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nonnull responseObject) {
+        
+        // 得到json串
+        NSDictionary * dataDic = responseObject;
+        
+        NSString * string = dataDic[@"data"];
+        
+        // 加载HTML格式内容
+        [self.webView loadHTMLString:string baseURL:nil];
+        
+        
+    } failure:^(NSURLSessionDataTask * _Nonnull task, NSError * _Nonnull error) {
+        
+    }];
+
+}
+
+// 禁用超链接
+- (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType
+{
+    if (navigationType == UIWebViewNavigationTypeLinkClicked) {
+        
+         return NO;
+    }
+   
+    return YES;
+}
+
+//当网页视图已经开始加载一个请求之后得到通知
+
+- (void) webViewDidStartLoad:(UIWebView  *)webView {
+    
+    
+    [_activityIndicatorView startAnimating];
+    _opaqueview.hidden = NO;
+    
+    
+}
+
+
+
+//网页加载完毕代理
+-(void)webViewDidFinishLoad:(UIWebView *)webView
+{
+   
+    
+    [_activityIndicatorView stopAnimating]; //停止风火轮
+    _opaqueview.hidden = YES; //隐藏
+    
+    //定义JS字符串(JS代码看不懂没有关系,只要知道怎么用就行了,网上很多代码)
+    NSString *script = [NSString stringWithFormat:
+                        @"var script = document.createElement('script');"
+                        "script.type = 'text/javascript';"
+                        "script.text = \"function ResizeImages() { "
+                        "var myimg;"
+                        "var maxwidth=%f;" //屏幕宽度（缩放比例）
+                        "for(i=0;i <document.images.length;i++){"
+                        "myimg = document.images[i];"
+                        "myimg.height = maxwidth / (myimg.width/myimg.height);"
+                        "myimg.width = maxwidth;"
+                        "}"
+                        "}\";"
+                        "document.getElementsByTagName('p')[0].appendChild(script);",self.view.frame.size.width * 2.5];
+    
+    
+    //添加JS
+    [webView stringByEvaluatingJavaScriptFromString:script];
+    
+    //添加调用JS执行的语句
+    [webView stringByEvaluatingJavaScriptFromString:@"ResizeImages();"];
+    
+   // 设置字体颜色
+    [webView stringByEvaluatingJavaScriptFromString:@"document.getElementsByTagName('body')[0].style.webkitTextFillColor = 'black'"];
+    
+   
+    
+    // 设置字体
+    [webView stringByEvaluatingJavaScriptFromString:@"document.getElementsByTagName('body')[0].style.webkitTextSizeAdjust= '300%'"];
+    
+    
+}
+
+
+
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+
+@end

@@ -1,0 +1,164 @@
+//
+//  MoodLogTableViewController.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 15/10/27.
+//  Copyright © 2015年 com.sunshuaiqi. All rights reserved.
+//
+
+#import "MoodLogTableViewController.h"
+#import "MoodLogTableViewCell.h"
+#import "MoodLogModel.h"
+
+#import "TFHpple.h"
+
+#import "MoodLogDetailViewController.h"
+
+#define kMoonLogUrl @"http://www.wumii.com/app/mobile/auto/site/items?obSiteId=2uRkHJ3P&ord=TIME_DESC&obCateId=1kokoTiH"
+
+@interface MoodLogTableViewController ()
+@property (nonatomic,strong) NSMutableArray * modelArray;
+
+@property(nonatomic,strong) NSString * paragraphStr; // 段落内容
+
+@end
+
+@implementation MoodLogTableViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    
+    self.tableView.contentInset = UIEdgeInsetsMake(0, 0, 44, 0);
+    
+    [self parseData];
+    
+}
+
+
+- (void)parseData
+{
+    NSURL * url = [NSURL URLWithString:kMoonLogUrl];
+    NSURLRequest * request = [[NSURLRequest alloc] initWithURL:url];
+    __weak MoodLogTableViewController * weakSelf = self;
+    NSURLSessionDataTask * task = [[NSURLSession sharedSession]  dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+        
+        if (data != nil) {
+            
+            NSDictionary * dict = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableContainers error:nil];
+            
+            NSDictionary * readerModuleDic = dict[@"readerModule"];
+            NSArray * itemInfosArray = readerModuleDic[@"itemInfos"];
+            
+            
+            weakSelf.modelArray = [NSMutableArray array];
+            
+            for (NSDictionary * dic in itemInfosArray) {
+                
+                MoodLogModel * model = [MoodLogModel new];
+                [model setValuesForKeysWithDictionary:dic[@"item"]];
+                
+                [weakSelf.modelArray addObject:model];
+                
+            }
+            
+        }
+       
+        dispatch_async(dispatch_get_main_queue(), ^{
+            
+            [weakSelf.tableView reloadData];
+            
+        });
+        
+    }];
+    
+    [task resume];
+    
+}
+
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+#pragma mark - Table view data source
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+
+    return 1;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+
+    return _modelArray.count;
+}
+
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    MoodLogTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"reuseIdentifier"];
+    if (cell == nil) {
+        cell = [[MoodLogTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"reuseIdentifier"];
+    }
+    
+    MoodLogModel * model = _modelArray[indexPath.row];
+    // 标题
+    cell.titleLabel.text = model.metadata;
+    
+    
+    // 得到HTML的网址
+    NSData * htmlData = [[NSData alloc] initWithContentsOfURL:[NSURL URLWithString:model.name]];
+    // 解析html 数据
+    TFHpple * parser = [[TFHpple alloc] initWithHTMLData:htmlData];
+    NSArray * array = [parser searchWithXPathQuery:@"//div"];
+    
+    for (TFHppleElement * element in array) {
+        
+        if ([element.attributes[@"class"] isEqualToString:@"content clearfix"]) {
+            
+            // 得到图片网址
+            NSArray * array1 = [element searchWithXPathQuery:@"//img"];
+            
+            for (TFHppleElement * elemet1 in array1) {
+                 // 得到cell上显示的图片
+                [cell.imgView sd_setImageWithURL:[NSURL URLWithString:elemet1.attributes[@"src"]]];
+            }
+            
+            
+            // 得到段落
+            self.paragraphStr = element.content;
+            
+            }
+    
+        }
+        
+
+    
+    return cell;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    
+    return  250;
+    
+}
+
+
+#pragma mark -- 进入详情页
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+
+    MoodLogDetailViewController * detailVC = [[MoodLogDetailViewController alloc] init];
+    
+    UINavigationController * NC = [[UINavigationController alloc] initWithRootViewController:detailVC];
+    
+    
+    [self presentViewController:NC animated:YES completion:nil];
+
+}
+
+
+@end

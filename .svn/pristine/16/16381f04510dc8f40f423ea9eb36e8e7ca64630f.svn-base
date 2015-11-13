@@ -1,0 +1,131 @@
+//
+//  MediaDetailsViewController.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 15/10/26.
+//  Copyright © 2015年 com.sunshuaiqi. All rights reserved.
+//
+
+#import "MediaDetailsViewController.h"
+#import <MediaPlayer/MediaPlayer.h>
+#import <AVKit/AVKit.h>
+#import <AVFoundation/AVFoundation.h>
+#import "MoviePlayerModel.h"
+
+@interface MediaDetailsViewController ()
+@property(nonatomic,strong)NSString * movieUrlStr;
+@property (nonatomic,strong)AVPlayerViewController * moviePlayerController;
+@property (nonatomic,strong)MoviePlayerModel * movieModel;
+@property (nonatomic,strong)NSMutableArray *urlArray;//存放播放链接
+@property (nonatomic,strong)AVPlayer *player;
+@property (nonatomic,strong)AVPlayerItem  *item;
+@end
+
+@implementation MediaDetailsViewController
+
+
+-(void)viewWillAppear:(BOOL)animated{
+    
+    [super viewWillAppear:animated];
+    
+    
+}
+//懒加载
+- (MoviePlayerModel *)movieModel
+{
+    if (!_movieModel) {
+        
+        _movieModel = [MoviePlayerModel new];
+    }
+    return _movieModel;
+}
+- (NSMutableArray *)urlArray
+{
+    if (!_urlArray) {
+        
+        _urlArray = [NSMutableArray array];
+    }
+    return _urlArray;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.view.backgroundColor = [UIColor colorWithRed:0.5929 green:1.0 blue:0.8062 alpha:1.0];
+    UIBarButtonItem * LBI = [[UIBarButtonItem alloc] initWithTitle:@"返回" style:UIBarButtonItemStylePlain target:self action:@selector(didClickLBI:)];
+    self.navigationItem.leftBarButtonItem = LBI;
+    [self getData];
+
+       NSURL * movieUrl = [NSURL URLWithString:_movieUrlStr];
+       
+       self.moviePlayerController = [[AVPlayerViewController alloc] init];
+       self.moviePlayerController.view.frame = CGRectMake(0, 64, self.view.frame.size.width, 300);
+       [self.view addSubview:self.moviePlayerController.view];
+       self.moviePlayerController.videoGravity = AVLayerVideoGravityResizeAspect;
+       
+       _player = [[AVPlayer alloc] initWithURL:movieUrl];
+       self.moviePlayerController.player = _player;
+
+       [_player play];
+
+
+    
+    
+}
+//获取数据
+
+- (void)getData
+{
+    NSString * urlStr = [NSString stringWithFormat:@"http://mobile.open.163.com/movie/%@/getMoviesForAndroid.htm",self.movieID];
+    print(@"%@",self.movieID);
+    
+    AFHTTPSessionManager * manager = [AFHTTPSessionManager manager];
+    
+    manager.responseSerializer.acceptableContentTypes  = [NSSet setWithObjects:@"text/html",@"charset=utf-8", nil];
+
+    NSDictionary * parament = @{@"ID":@"3674828"};
+    [manager GET:urlStr parameters:parament success:^(NSURLSessionDataTask * _Nonnull task, id  _Nonnull responseObject) {
+        
+        NSDictionary * dic = responseObject;
+        [self.movieModel setValuesForKeysWithDictionary:dic];
+        //遍历model的videoList数组
+        for (NSDictionary * dict in self.movieModel.videoList) {
+            
+            [self.urlArray addObject:dict[@"repovideourlmp4"]];
+            //print(@"%@",dict[@"repovideourlmp4"]);
+        }
+        self.movieUrlStr = self.urlArray.firstObject;
+       
+        
+            } failure:^(NSURLSessionDataTask * _Nonnull task, NSError * _Nonnull error) {
+        
+        
+    }];
+    
+    
+
+}
+
+
+
+
+-(void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
+{
+    
+
+    
+    
+}
+
+-(void)didClickLBI:(UIBarButtonItem *)LBI
+{
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+#pragma mark- 实现代理方法
+- (BOOL)playerViewControllerShouldAutomaticallyDismissAtPictureInPictureStart:(AVPlayerViewController *)playerViewController
+{
+    
+    
+    
+    return YES;
+}
+@end

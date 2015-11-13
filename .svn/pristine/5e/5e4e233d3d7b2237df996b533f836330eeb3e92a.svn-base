@@ -1,0 +1,43 @@
+//
+//  MoodLogDetailViewController.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 15/10/27.
+//  Copyright © 2015年 com.sunshuaiqi. All rights reserved.
+//
+
+#import "MoodLogDetailViewController.h"
+
+@interface MoodLogDetailViewController ()
+
+@end
+
+@implementation MoodLogDetailViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.view.backgroundColor = [UIColor colorWithRed:0.400 green:1.000 blue:0.800 alpha:1.000];
+
+    UIBarButtonItem * backBI = [[UIBarButtonItem alloc] initWithTitle:@"返回" style:UIBarButtonItemStylePlain target:self action:@selector(didClickBackBI)];
+    self.navigationItem.rightBarButtonItem = backBI;
+    
+}
+
+
+- (void)didClickBackBI
+{
+
+
+
+}
+
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+
+
+@end

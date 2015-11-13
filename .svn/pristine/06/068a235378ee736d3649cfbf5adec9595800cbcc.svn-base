@@ -1,0 +1,48 @@
+//
+//  MediaListCollectionViewCell.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 15/10/23.
+//  Copyright © 2015年 com.sunshuaiqi. All rights reserved.
+//
+
+#import "MediaListCollectionViewCell.h"
+
+@implementation MediaListCollectionViewCell
+
+//初始化cell
+- (instancetype)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+         [self p_setupSubviews];
+        
+    }
+    return self;
+}
+
+- (void)p_setupSubviews
+{
+    _movieImgView = [[UIImageView alloc] init];
+    [self.contentView addSubview:_movieImgView];
+    [_movieImgView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.mas_equalTo(self.mas_top).offset(0);
+        make.left.equalTo(self.mas_left);
+        make.bottom.equalTo(self.mas_bottom);
+        make.right.equalTo(self.mas_right);
+    }];
+    _movieTitleLabel = [UILabel new];
+    _movieTitleLabel.textAlignment = NSTextAlignmentCenter;//居中对齐
+    _movieTitleLabel.numberOfLines = 0;//自适应行数
+    _movieTitleLabel.textColor = [UIColor whiteColor];
+    _movieTitleLabel.backgroundColor = [UIColor colorWithRed:0.0 green:0.0 blue:0.0 alpha:0.143211206896552];
+    _movieTitleLabel.font = [UIFont systemFontOfSize:13.0];
+[_movieImgView addSubview:_movieTitleLabel];
+    [_movieTitleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.bottom.mas_equalTo(self.movieImgView.mas_bottom);
+        make.height.mas_equalTo(30);
+        make.left.and.right.mas_equalTo(self.movieImgView);
+    }];
+   }
+
+@end

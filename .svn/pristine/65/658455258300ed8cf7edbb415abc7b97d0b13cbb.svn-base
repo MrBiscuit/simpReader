@@ -1,0 +1,295 @@
+//
+//  EncouragementTableViewController.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 15/10/23.
+//  Copyright © 2015年 com.sunshuaiqi. All rights reserved.
+//
+
+#import "EncouragementTableViewController.h"
+#import "Literary.h"
+#import "LiteraryTableViewCell.h"
+#import "LiteraryNextTableViewController.h"
+#import <SVProgressHUD.h>
+#import "ProjectAlpha-Swift.h"
+@interface EncouragementTableViewController ()
+@property (nonatomic,strong) NSMutableArray * modelArray;
+@end
+
+@implementation EncouragementTableViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.tableView.contentInset = UIEdgeInsetsMake(0, 0, 50, 0);
+    self.view.backgroundColor = [UIColor clearColor];
+    //self.tableView.backgroundColor = [UIColor whiteColor];
+    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    //[SVProgressHUD showWithStatus:@"疯狂加载中...." ];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(themeColorUpdate:) name:@"themeColorUpdate" object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(nightMode:) name:@"night" object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(dayMode:) name:@"day" object:nil];
+
+    
+    [self parseData];
+    
+    // 上拉加载，下拉刷新
+    [self UpLoadingAndDownRefresh];
+    
+}
+
+// 夜间模式
+- (void)nightMode:(NSNotification *)notification
+{
+    
+    self.tableView.backgroundColor = NightBackgroundColor;
+    
+    [self.tableView reloadData];
+}
+
+// 日间模式
+- (void)dayMode:(NSNotification *)notification
+{
+    
+    if ([userDefaults colorForKey:@"light"]) {
+        
+        self.tableView.backgroundColor = [userDefaults colorForKey:@"light"];
+        
+    }else {
+        
+        self.tableView.backgroundColor = [UIColor whiteColor];
+        
+    }
+    
+    [self.tableView reloadData];
+}
+
+// 颜色改变
+- (void)themeColorUpdate:(NSNotification *)notification
+{
+    
+    self.tableView.backgroundColor = notification.userInfo[@"light"];
+    
+    
+    [self.tableView reloadData];
+    
+}
+
+#pragma mark --- ---------  上拉加载，下拉刷新  ----------------
+- (void)UpLoadingAndDownRefresh
+{
+    
+    // 下拉刷新
+    __weak EncouragementTableViewController * weakSelf = self;
+    
+    // 设置回调（一旦进入刷新状态就会调用这个refreshingBlock）
+    self.tableView.header = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
+        
+        if (weakSelf.tableView.visibleCells.count == 0) {
+            [weakSelf parseData];
+        }
+        // 刷新表格
+        [weakSelf.tableView reloadData];
+        
+        // 拿到当前的下拉刷新控件，结束刷新状态
+        [weakSelf.tableView.header endRefreshing];
+        
+        
+    }];
+    
+    // 设置自动切换透明度(在导航栏下面自动隐藏)
+    weakSelf.tableView.header.automaticallyChangeAlpha = YES;
+    
+    
+    // 上拉加载
+//    weakSelf.tableView.footer = [MJRefreshBackNormalFooter footerWithRefreshingBlock:^{
+//        
+//        // 结束刷新
+//        [weakSelf.tableView.footer endRefreshing];
+//        
+//    }];
+    
+}
+
+
+#pragma mark -  解析数据
+- (void)parseData{
+    
+    NSURL * url = [NSURL URLWithString:@"http://apiv3.pento.cn/api/v3/category/28854156/boards.json?count=21&token=Kx2S9nE0iHgbbSbeDdh2"];
+    
+    NSURLRequest * request = [[NSURLRequest alloc] initWithURL:url];
+
+    __weak EncouragementTableViewController * weakSelf = self;
+    NSURLSessionDataTask * task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+        
+        if (data != nil) {
+            
+            NSDictionary * dict = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableContainers error:nil];
+            NSArray * dataArray = dict[@"data"];
+            
+            weakSelf.modelArray = [NSMutableArray array];
+            for (NSDictionary * dic in dataArray) {
+                
+                Literary * model = [Literary new];
+                
+                [model setValuesForKeysWithDictionary:dic];
+                
+                [weakSelf.modelArray addObject:model];
+                
+            }
+            
+           // print(@"%@",weakSelf.modelArray);
+            
+        }
+        
+        
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            
+            // 刷新数据
+            [weakSelf.tableView reloadData];
+            //[SVProgressHUD dismiss];
+        });
+        
+        
+    }];
+    
+    // 开始执行
+    [task resume];
+    
+}
+
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+#pragma mark - Table view data source
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+
+    return 1;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+
+    return _modelArray.count;
+}
+
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    LiteraryTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"reuseIdentifier"];
+    
+    if (cell == nil) {
+        
+        cell = [[LiteraryTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"reuseIdentifier"];
+    }
+    
+  
+    Literary * model = _modelArray[indexPath.row];
+    cell.model = model;
+    
+    
+    if ([userDefaults boolForKey:@"isNightMode"]) {
+        // 夜间模式
+        cell.titleLabel.textColor = NightTextColor;
+    }else {
+        
+        // 主题颜色或者白天模式
+        cell.titleLabel.textColor = [UIColor blackColor];
+        
+    }
+    
+    
+    return cell;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 140;
+    
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+
+   // EncouragementNextTableViewController * nextTVC = [EncouragementNextTableViewController new];
+    LiteraryNextTableViewController * nextTVC = [LiteraryNextTableViewController new];
+    UINavigationController * NC = [[UINavigationController alloc] initWithRootViewController:nextTVC];
+    
+    nextTVC.modalTransitionStyle = UIModalTransitionStyleFlipHorizontal;
+    
+    Literary * model = _modelArray[indexPath.row];
+    
+    nextTVC.imgUrl = model.cover_url;
+    nextTVC.modelID = model.ID;
+    nextTVC.titleName = model.name;
+    
+    [self presentViewController:NC animated:YES completion:nil];
+
+}
+
+
+
+#pragma mark -- 上滑时tabbar消失，下拉是tabbar出现
+-(void)scrollViewDidScroll:(UIScrollView *)scrollView{
+    //给偏移量添加观察者
+    [scrollView addObserver:self forKeyPath:@"contentOffset" options:NSKeyValueObservingOptionNew|NSKeyValueObservingOptionOld context:nil];
+}
+//实现观察者方法
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSString *,id> *)change context:(void *)context
+{
+    
+    CGPoint newContOffset = [change[NSKeyValueChangeNewKey] CGPointValue];
+    
+    CGPoint oldContOffset= [change[NSKeyValueChangeOldKey] CGPointValue];
+    
+    CGFloat dy = newContOffset.y - oldContOffset.y;
+    // 上滑手势
+    if (dy > 0) {
+          // tabbar 在屏幕内显示
+        if (self.tabBarController.tabBar.frame.origin.y < ScreenHeight ) {
+            
+            self.tabBarController.tabBar.frame = CGRectMake(0, CGRectGetMinY(self.tabBarController.tabBar.frame)+dy*0.001, ScreenWidth, 49);
+            
+        }else{ // tabbar 不在屏幕中（将其放在屏幕的最下方）
+            
+            self.tabBarController.tabBar.frame = CGRectMake(0, ScreenHeight, ScreenWidth, 49);
+        }
+        
+
+        // 下拉手势
+    }else if(dy <= 0){
+         // 不在原有位置
+        if (self.tabBarController.tabBar.frame.origin.y > ScreenHeight-49) {
+            
+             self.tabBarController.tabBar.frame = CGRectMake(0, CGRectGetMinY(self.tabBarController.tabBar.frame)+dy*0.01, ScreenWidth, 49);
+            
+        }else{
+            // 在原有位置
+            self.tabBarController.tabBar.frame = CGRectMake(0, ScreenHeight - 49, ScreenWidth, 49);
+            
+        }
+        
+    }
+    
+    // 防止回弹时，tabbar消失
+    if (oldContOffset.y < 200) {
+        
+        self.tabBarController.tabBar.frame = CGRectMake(0,ScreenHeight- 49, ScreenWidth, 49);
+    }
+    
+    
+}
+
+
+- (void)dealloc
+{
+    // 移除观察者
+    [self.tableView removeObserver:self forKeyPath:@"contentOffset"];
+
+}
+
+@end

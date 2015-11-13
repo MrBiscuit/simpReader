@@ -1,0 +1,42 @@
+//
+//  GlobalPrefix.pch
+//  ProjectAlpha
+//
+//  Created by lanou3g on 10/22/15.
+//  Copyright © 2015 com.sunshuaiqi. All rights reserved.
+//
+
+#define GlobalPrefix_pch
+
+// 全局引入
+    #import <Masonry.h>
+    #import <UIImageView+WebCache.h>
+    #import <JHChainableAnimations.h>
+    #import <AFNetworking.h>
+    #import <DKNightVersion.h>
+    #import "AlphaIcons.h"
+
+#define kLiteraryUrl @"http://apiv3.pento.cn/api/v3/category/28854130/boards.json?count=21&token=Kx2S9nE0iHgbbSbeDdh2"//文艺范第一页
+#define kLiteraryNextUrl(ID) [NSString stringWithFormat:@"http://apiv3.pento.cn/api/v2/stream/board/%ld/pin.json?count=21&token=Kx2S9nE0iHgbbSbeDdh2",ID]//文艺范第二页
+#define kLiteraryDetailUrl(ID) [NSString stringWithFormat:@"http://apiv3.pento.cn/api/pin/content/%ld/show.json?token=Kx2S9nE0iHgbbSbeDdh2",ID]//文艺范详情页
+// 获取设备型号
+#define is_iPhone4 ([[UIScreen mainScreen] bounds].size.height == 480 ? YES : NO)
+
+#define is_iPhone5 ([[UIScreen mainScreen] bounds].size.height == 568 ? YES : NO)
+
+#define is_iPhone6 ([[UIScreen mainScreen] bounds].size.height ==  667 ? YES : NO)
+
+#define is_iPhone6plus ([[UIScreen mainScreen] bounds].size.height  == 736 ? YES : NO)
+
+// 全局颜色
+#define NightTextColor [UIColor colorWithRed:0.8 green:0.8 blue:0.8 alpha:1.0];
+// LeanCloud相关参数
+#define AVOSCloudAppID  @"vyv02sczwhfv0g5hyq5j1ffcak0204zb0unani2yb7fpx2e2"
+#define AVOSCloudAppKey @"vjxdg5fk7bi0ce0fy612uvyhpex1f98fdfez4i32j4qibynm"
+
+#ifdef DEBUG    // 如果当前为调试状态 则开启print功能
+    #define print(...) NSLog(__VA_ARGS__); // 定义
+#else                   // 如果当前为发布状态 则关闭print功能
+    #define print(...)
+
+#endif

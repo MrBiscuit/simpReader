@@ -1,0 +1,17 @@
+//
+//  FavoriteModel.h
+//  ProjectAlpha
+//
+//  Created by lanou3g on 15/11/4.
+//  Copyright © 2015年 com.sunshuaiqi. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface FavoriteModel : NSObject
+
+@property (nonatomic,strong) NSString * titleStr;
+@property (nonatomic,strong) NSString * imgUrl;
+@property (nonatomic,assign) NSInteger ID;
+
+@end

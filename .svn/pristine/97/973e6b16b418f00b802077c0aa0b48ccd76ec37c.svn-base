@@ -1,0 +1,71 @@
+//
+//  ArticlesListViewController.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 10/22/15.
+//  Copyright © 2015 com.sunshuaiqi. All rights reserved.
+//
+
+#import "ArticlesListViewController.h"
+#import "SCNavTabBarController.h"
+#import "LiteraryTableViewController.h"
+#import "EncouragementTableViewController.h"
+#import "PictureCollectionViewController.h"
+#import "WaterFlowLayout.h"
+#import "MoodLogTableViewController.h"
+#import "RecommendCollectionViewController.h"
+
+
+
+@interface ArticlesListViewController ()
+@property (nonatomic,strong) SCNavTabBarController *navTabBarController;
+
+@end
+
+@implementation ArticlesListViewController
+
+
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    UICollectionViewFlowLayout * flowLayout = [UICollectionViewFlowLayout new];
+    RecommendCollectionViewController *oneViewController = [[RecommendCollectionViewController alloc] initWithCollectionViewLayout:flowLayout];
+    oneViewController.title = @"推荐";
+   
+    
+    EncouragementTableViewController *twoViewController = [[EncouragementTableViewController alloc] init];
+    twoViewController.title = @"励志篇";
+    
+    
+    WaterFlowLayout * layout = [WaterFlowLayout new];
+    PictureCollectionViewController *threeViewController = [[PictureCollectionViewController alloc] initWithCollectionViewLayout:layout];
+    threeViewController.title = @"图片故事";
+    threeViewController.view.backgroundColor = [UIColor magentaColor];
+    
+    
+    LiteraryTableViewController *fourViewController = [[LiteraryTableViewController alloc] init];
+    fourViewController.title = @"文艺范儿";
+    
+    MoodLogTableViewController *fiveViewController = [[MoodLogTableViewController alloc] init];
+    fiveViewController.title = @"心情日志";
+    
+    self.navTabBarController = [[SCNavTabBarController alloc] init];
+    _navTabBarController.navTabBarColor =[UIColor colorWithRed:0.3294 green:0.7647 blue:0.9451 alpha:1.0];
+    
+   
+    _navTabBarController.subViewControllers = @[oneViewController, twoViewController, threeViewController, fourViewController, fiveViewController];
+    //navTabBarController.showArrowButton = YES;
+    [_navTabBarController addParentController:self];
+    
+
+
+}
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+@end

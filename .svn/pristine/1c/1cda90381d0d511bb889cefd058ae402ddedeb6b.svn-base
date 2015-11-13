@@ -1,0 +1,153 @@
+//
+//  DataHandle.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 10/30/15.
+//  Copyright © 2015 com.sunshuaiqi. All rights reserved.
+//
+
+#import "DataHandle.h"
+#import "SideBarViewController.h"
+
+#import "FavoriteModel.h"
+#import <AVOSCloud.h>
+
+@interface DataHandle ()
+
+@property (nonatomic,strong) NSMutableArray * array; // 存放查询结果的数组
+
+@end
+
+@implementation DataHandle
+
++ (instancetype)SharedData{
+    
+    static DataHandle *sharedManager = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        sharedManager = [self new];
+    });
+    
+    return sharedManager;
+}
+
+
+#pragma mark -- 创建数据库
+- (void)createDB
+{
+    
+    // 找到document的路径
+    NSString * documentPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).lastObject;
+    
+    // 数据库存放地址
+    NSString * filePath = [documentPath stringByAppendingPathComponent:@"History.db"];
+    
+    
+    // 创建数据库
+    self.dataBase = [FMDatabase databaseWithPath:filePath];
+    
+    print(@"数据库所在路径：%@",filePath);
+    
+    // 打开数据库的情况
+    if ([self.dataBase open]) {
+        
+        print(@"数据库创建成功");
+        
+        // 创建表 (列名，类型)
+        // （1）存放文章的表  (根据当前用户名创建表名)
+        NSString * tableName = [NSString stringWithFormat:@"CREATE TABLE IF NOT EXISTS %@ (ID text PRIMARY KEY , title TEXT, imageUrl TEXT,paragraph TEXT,time TEXT);",[AVUser currentUser].username];
+        
+        BOOL result =  [self.dataBase executeUpdate:tableName];
+        
+        if (result) {
+            print(@"成功建表（浏览）");
+        } else {
+            
+            print(@"建表失败");
+        }
+    }
+    
+}
+
+
+#pragma mark -- 向表中添加数据
+- (void)insertDataWithID:(NSString *)ID title:(NSString *)title imgUrl:(NSString *)imgUrl paragraph:(NSString *)paragraph time:(NSString *)time
+{
+    
+    [self createDB];
+    
+    if ([self.dataBase open]) {
+        
+        NSMutableArray * array = [self qureyData];
+        
+        for (FavoriteModel * model in array) {
+            
+            if ([model.ID isEqualToString:ID]) {
+                print(@"之前浏览过了");
+                
+                NSString * updateSql = [NSString stringWithFormat:@"update %@ set time = ? where ID = ?",[AVUser currentUser].username];
+                [self.dataBase executeUpdate:updateSql,time,ID];
+                
+                [self.dataBase close];
+                
+                return;
+            }
+        }
+        
+        // 数据库中没有浏览过，就收藏
+        // 添加数据
+        NSString * insertTableName = [NSString stringWithFormat:@"insert into %@ (ID,title,imageUrl,paragraph,time) values (?,?,?,?,?)",[AVUser currentUser].username];
+        
+        [self.dataBase executeUpdate:insertTableName, ID, title,imgUrl,paragraph,time];
+        
+        print(@"添加浏览成功");
+        
+    }
+    
+    // 关闭数据库
+    [self.dataBase close];
+    
+}
+
+
+#pragma mark -- 查询数据库
+- (NSMutableArray *)qureyData
+{
+    
+    [self createDB];
+    if ([self.dataBase open]) {
+        self.array = [NSMutableArray array];
+        // 执行查询语句
+        FMResultSet * resultSet = [self.dataBase executeQuery:[NSString stringWithFormat:@"select * from %@ order by time desc",[AVUser currentUser].username]];
+        
+        // 遍历结果
+        while ([resultSet next]) {
+            FavoriteModel * model = [FavoriteModel new];
+            NSString * ID = [resultSet stringForColumn:@"ID"];
+            NSString * title = [resultSet stringForColumn:@"title"];
+            NSString * imgUrl = [resultSet stringForColumn:@"imageUrl"];
+            NSString * paragraph = [resultSet stringForColumn:@"paragraph"];
+            NSString * time = [resultSet stringForColumn:@"time"];
+            
+            // 赋值给model
+            
+            model.ID = ID;
+            model.titleStr = title;
+            model.imgUrl = imgUrl;
+            model.paragraph = paragraph;
+            model.BrowseTime = time;
+            [self.array addObject:model];
+        }
+        
+        
+    }
+    
+    
+    return _array;
+}
+
+
+
+
+
+@end

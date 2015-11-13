@@ -1,0 +1,174 @@
+//
+//  AppDelegate.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 10/22/15.
+//  Copyright © 2015 com.sunshuaiqi. All rights reserved.
+//
+
+#import "AppDelegate.h"
+#import "ArticlesListViewController.h"
+#import "MediaListViewController.h"
+#import "ProfileViewController.h"
+#import "AlphaIcons.h"
+#import <AVOSCloud/AVOSCloud.h>
+#import <AVOSCloudSNS.h>
+#import "UINavigationBar+Awesome.h"
+#import "ProjectAlpha-Swift.h"
+
+@interface AppDelegate ()<UITabBarControllerDelegate>
+
+@property(nonatomic, strong) UITabBarController *tabBarController;
+@property(nonatomic, strong) ArticlesListViewController *articlesListViewController;
+@property(nonatomic, strong) MediaListViewController *mediaListViewController;
+@property(nonatomic, strong) ProfileViewController *profileViewController;
+
+@end
+
+@implementation AppDelegate
+
+
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+    
+    _window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+    [_window makeKeyAndVisible];
+    _window.backgroundColor = [UIColor whiteColor];
+    [self initialSetUp];
+    _window.rootViewController = _tabBarController;
+    [AVOSCloud setApplicationId:AVOSCloudAppID clientKey:AVOSCloudAppKey];
+//    [AVOSCloud setAllLogsEnabled:YES];
+    _tabBarController.delegate = self;
+    [AVOSCloud setLastModifyEnabled:YES];
+    [self userLoginStatusChanged:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(userLoginStatusChanged:) name:@"userLoggedIn" object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(themeColorUpdate:) name:@"themeColorUpdate" object:nil];
+    [AVAnalytics trackAppOpenedWithLaunchOptions:launchOptions];
+    
+    return YES;
+}
+-(void)tabBarController:(UITabBarController *)tabBarController didSelectViewController:(UIViewController *)viewController{
+    
+    tabBarController.tabBar.frame = CGRectMake(0, ScreenHeight -49, ScreenWidth, 49);
+}
+#pragma mark- 初始化
+- (void)initialSetUp{
+    _articlesListViewController = [ArticlesListViewController new];
+    _mediaListViewController = [MediaListViewController new];
+    _profileViewController = [ProfileViewController new];
+    
+    // 创建底部选项卡控制器
+    _tabBarController = [UITabBarController new];
+    
+    // 添加主页面到选项卡控制器 (注: 美图 和 视界 带有导航控制器 )
+    _tabBarController.viewControllers = @[[[UINavigationController alloc] initWithRootViewController:_articlesListViewController], [[UINavigationController alloc] initWithRootViewController:_mediaListViewController], [[UINavigationController alloc] initWithRootViewController:_profileViewController]];
+    #pragma mark 制定导航栏和状态栏颜色
+    [[UINavigationBar appearance] setTintColor:[UIColor whiteColor]];
+    
+    [[UINavigationBar appearance] setBarTintColor:[UIColor colorWithRed:0 green:0.6863 blue:0.9412 alpha:1]];
+    
+    [[UINavigationBar appearance] setTitleTextAttributes: [NSDictionary dictionaryWithObjectsAndKeys: [UIColor whiteColor], NSForegroundColorAttributeName, [UIFont systemFontOfSize:21], NSFontAttributeName, nil]];
+    // 哈哈 这句话虽然报错 BUT IT WORKS!
+    [[UINavigationBar appearance] setBarStyle:UIStatusBarStyleLightContent];
+    #pragma mark 制定页面导航栏标题
+    _articlesListViewController.navigationItem.title = @"图文";
+    _mediaListViewController.navigationItem.title = @"视界";
+    _profileViewController.navigationItem.title = @"我";
+    
+    #pragma mark 指定页面选项卡标题
+    _articlesListViewController.tabBarItem.title = nil;
+    _mediaListViewController.tabBarItem.title = nil;
+    _profileViewController.tabBarItem.title = nil;
+    
+    #pragma mark 制定选项卡页面图标尺寸
+    _tabBarController.tabBar.items[0].imageInsets = UIEdgeInsetsMake(2.5, -2.5, -7.5, -2.5);
+    _tabBarController.tabBar.items[1].imageInsets =  UIEdgeInsetsMake(2.5, -2.5, -7.5, -2.5);
+    _tabBarController.tabBar.items[2].imageInsets = UIEdgeInsetsMake(2.5, -2.5, -7.5, -2.5);
+    _tabBarController.tabBar.itemPositioning = UITabBarItemPositioningCentered;
+    
+#pragma mark- 制定选项卡控制器材质颜色
+    _tabBarController.tabBar.barTintColor = [UIColor colorWithRed:0 green:0.6863 blue:0.9412 alpha:1];
+    
+    
+    CGRect frame = CGRectMake(0, 0, 35, 35);
+    
+    _tabBarController.tabBar.items[0].image =  [[AlphaIcons imageOfPagesUnselectedWithFrame:frame] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
+    _tabBarController.tabBar.items[1].image =  [[AlphaIcons imageOfHorizonUnselectedWithFrame:frame] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
+    _tabBarController.tabBar.items[2].image = [[AlphaIcons imageOfProfileUnselectedWithFrame:frame] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
+    _tabBarController.tabBar.items[0].selectedImage =  [[AlphaIcons imageOfPagesSelectedWithFrame:frame] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
+    _tabBarController.tabBar.items[1].selectedImage =  [[AlphaIcons imageOfHorizonSelectedWithFrame:frame] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
+    _tabBarController.tabBar.items[2].selectedImage = [[AlphaIcons imageOfProfileSelectedWithFrame:frame] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(nightMode) name:@"night" object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(dayMode) name:@"day" object:nil];
+}
+
+- (void)nightMode{
+    
+    [[UINavigationBar appearance] setTintColor:NightTextColor];
+    
+    _articlesListViewController.navigationController.navigationBar.barTintColor = NightBackgroundColor;
+    _mediaListViewController.navigationController.navigationBar.barTintColor = NightBackgroundColor;
+    _profileViewController.navigationController.navigationBar.barTintColor = NightBackgroundColor;
+}
+
+- (void)dayMode{
+    [UIView animateWithDuration:0.4 animations:^{
+        [[UINavigationBar appearance] setTitleTextAttributes: [NSDictionary dictionaryWithObjectsAndKeys: [UIColor whiteColor], NSForegroundColorAttributeName, [UIFont systemFontOfSize:21], NSFontAttributeName, nil]];
+        
+        _articlesListViewController.view.backgroundColor = [[NSUserDefaults standardUserDefaults] colorForKey:@"viewBackgroundColor"];
+        _mediaListViewController.view.backgroundColor = [[NSUserDefaults standardUserDefaults] colorForKey:@"viewBackgroundColor"];
+        _profileViewController.view.backgroundColor = [[NSUserDefaults standardUserDefaults] colorForKey:@"viewBackgroundColor"];
+        
+        self.tabBarController.tabBar.barTintColor = [[NSUserDefaults standardUserDefaults] colorForKey:@"TabBarTintColor"];
+        
+        _articlesListViewController.navigationController.navigationBar.barTintColor = [[NSUserDefaults standardUserDefaults] colorForKey:@"NavigationBarTinColor"];
+        _mediaListViewController.navigationController.navigationBar.barTintColor = [[NSUserDefaults standardUserDefaults] colorForKey:@"NavigationBarTinColor"];
+        _profileViewController.navigationController.navigationBar.barTintColor = [[NSUserDefaults standardUserDefaults] colorForKey:@"NavigationBarTinColor"];
+    }];
+}
+
+- (void)themeColorUpdate:(NSNotification *)notification{
+    _articlesListViewController.navigationController.navigationBar.barTintColor = notification.userInfo[@"dark"];
+    _mediaListViewController.navigationController.navigationBar.barTintColor = notification.userInfo[@"dark"];
+    _profileViewController.navigationController.navigationBar.barTintColor = notification.userInfo[@"dark"];
+    
+}
+
+- (void)userLoginStatusChanged:(NSNotification *)notification{
+    
+    AVUser *currentUser = [AVUser currentUser];
+    if (currentUser) {
+        print(@"用户已确认登录currentUser:%@",currentUser.username);
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"loginAction" object:self userInfo:@{@"username":currentUser.username}];
+    }else{
+        print(@"当前用户为空");
+    }
+}
+
+
+- (void)applicationWillResignActive:(UIApplication *)application {
+    // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
+    // Use this method to pause ongoing tasks, disable timers, and throttle down OpenGL ES frame rates. Games should use this method to pause the game.
+}
+
+-(BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url{
+    return [AVOSCloudSNS handleOpenURL:url];
+}
+- (void)applicationDidEnterBackground:(UIApplication *)application {
+    // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
+    // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
+}
+
+- (void)applicationWillEnterForeground:(UIApplication *)application {
+    // Called as part of the transition from the background to the inactive state; here you can undo many of the changes made on entering the background.
+}
+
+- (void)applicationDidBecomeActive:(UIApplication *)application {
+    // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+}
+
+- (void)applicationWillTerminate:(UIApplication *)application {
+    // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+}
+
+@end

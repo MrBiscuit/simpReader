@@ -1,0 +1,51 @@
+//
+//  LoginViewController.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 10/26/15.
+//  Copyright © 2015 com.sunshuaiqi. All rights reserved.
+//
+
+#import "LoginViewController.h"
+#import "CustomTextField.h"
+
+@interface LoginViewController ()
+{}
+@property(nonatomic, strong) CustomTextField *usernameLabel;
+@property(nonatomic, strong) CustomTextField *userPasswordLabel;
+@property(nonatomic, strong) CustomTextField *confirmPasswordLabel;
+
+@property(nonatomic, strong) UILabel *nameLabel;
+@property(nonatomic, strong) UIView *bottomLine;
+@property(nonatomic, strong) UIView *bottomLineAnimation;
+
+@property(nonatomic, strong) UIButton *loginButton;
+@property(nonatomic, strong) UILabel *titleLabel;
+@property(nonatomic, assign) CGFloat keyboardHeight;
+@property(nonatomic, assign) BOOL keyboardHasShown;
+
+@end
+
+@implementation LoginViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

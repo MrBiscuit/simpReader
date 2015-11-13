@@ -1,0 +1,22 @@
+//
+//  MoodLogModel.h
+//  ProjectAlpha
+//
+//  Created by lanou3g on 15/10/27.
+//  Copyright © 2015年 com.sunshuaiqi. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface MoodLogModel : NSObject
+
+@property (nonatomic,strong) NSString * name; // 网址链接
+@property (nonatomic,strong) NSString * metadata; // 标题
+
+@property (nonatomic,strong) NSString * ID;
+
+// 以下两个相加得到喜欢该文章的人数
+@property (nonatomic,assign) NSInteger  numUserIt;
+@property (nonatomic,assign) NSInteger  numUsersWithoutNameLikeIt;
+
+@end

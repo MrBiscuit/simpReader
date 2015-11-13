@@ -1,0 +1,187 @@
+//
+//  MediaDetailsViewController.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 15/10/26.
+//  Copyright © 2015年 com.sunshuaiqi. All rights reserved.
+//
+
+#import "MediaDetailsViewController.h"
+#import <MediaPlayer/MediaPlayer.h>
+#import <AVKit/AVKit.h>
+#import <AVFoundation/AVFoundation.h>
+#import "MoviePlayerModel.h"
+#import <SVProgressHUD.h>
+
+@interface MediaDetailsViewController ()<UIGestureRecognizerDelegate>
+@property(nonatomic,strong)NSString * movieUrlStr;
+@property (nonatomic,strong)AVPlayerViewController * moviePlayerController;
+@property (nonatomic,strong)MoviePlayerModel * movieModel;
+@property (nonatomic,strong)NSMutableArray *urlArray;//存放播放链接
+@property (nonatomic,strong)AVPlayer *player;
+@property (nonatomic,strong)AVPlayerItem  *item;
+@property (nonatomic,strong)UIImageView *movieImgView;
+@property (nonatomic,strong)UITapGestureRecognizer *tapRecognizer;
+@end
+
+@implementation MediaDetailsViewController
+
+
+-(void)viewWillAppear:(BOOL)animated{
+    
+    [super viewWillAppear:animated];
+    
+    
+}
+//懒加载
+- (MoviePlayerModel *)movieModel
+{
+    if (!_movieModel) {
+        
+        _movieModel = [MoviePlayerModel new];
+    }
+    return _movieModel;
+}
+- (NSMutableArray *)urlArray
+{
+    if (!_urlArray) {
+        
+        _urlArray = [NSMutableArray array];
+    }
+    return _urlArray;
+}
+
+//- (void)viewDidLoad
+-(void)viewDidAppear:(BOOL)animated
+{
+//    [super viewDidLoad];
+    [super viewDidAppear:animated];
+    //设置返回键
+    self.view.backgroundColor = [UIColor colorWithRed:0.5929 green:1.0 blue:0.8062 alpha:1.0];
+    UIBarButtonItem * LBI = [[UIBarButtonItem alloc] initWithTitle:@"返回" style:UIBarButtonItemStylePlain target:self action:@selector(didClickLBI:)];
+    self.navigationItem.leftBarButtonItem = LBI;
+    //设置imgview
+    self.movieImgView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 100, self.view.frame.size.width, 300)];
+    [self.movieImgView sd_setImageWithURL:[NSURL URLWithString:self.movieImgUrl]];
+    self.movieImgView.backgroundColor = [UIColor colorWithRed:0.4995 green:1.0 blue:0.8286 alpha:1.0];
+    
+    //打开imgview的交互
+    _movieImgView.userInteractionEnabled = YES;
+    self.tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(didClickImg:)];
+    _tapRecognizer.delegate = self;
+    
+    
+    [self.movieImgView addGestureRecognizer:_tapRecognizer];
+    
+
+    [self.view addSubview:self.movieImgView];
+    [_player addObserver:self forKeyPath:@"staus" options:NSKeyValueObservingOptionNew context:&_player];
+    [self getData];
+}
+//获取数据
+
+-(void)didClickImg:(UITapGestureRecognizer *)recognizer
+{
+    
+    [SVProgressHUD show];
+    
+    dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+    dispatch_async(queue, ^{
+        self.movieUrlStr = self.urlArray.firstObject;
+        NSURL * url = [NSURL URLWithString:self.movieUrlStr];
+        AVPlayerItem * playerItem = [AVPlayerItem playerItemWithURL:url];
+        AVPlayer * player = [AVPlayer playerWithPlayerItem:playerItem];
+        AVPlayerViewController * playerViewController = [[AVPlayerViewController alloc] init];
+        
+        playerViewController.player = player;
+        
+       // [player addObserver:self forKeyPath:@"staus" options:NSKeyValueObservingOptionNew context:nil];
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [SVProgressHUD dismiss];
+            [self presentViewController:playerViewController animated:YES completion:^{
+                
+            }];
+            
+        });
+        
+    });
+}
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSString *,id> *)change context:(void *)context
+{
+    if ([keyPath isEqualToString:@"staus"]) {
+        
+        switch ([change[NSKeyValueChangeNewKey] integerValue]) {
+            case AVPlayerStatusReadyToPlay:{
+                
+                
+            }
+                
+                break;
+                
+            default:
+                break;
+        }
+    
+    }
+    
+}
+- (void)viewWillUnload
+{
+    [self.movieModel removeObserver:self forKeyPath:@"imgpath"];
+    
+}
+
+- (void)getData
+{
+    NSString * urlStr = [NSString stringWithFormat:@"http://mobile.open.163.com/movie/%@/getMoviesForAndroid.htm",self.movieID];
+    print(@"%@",self.movieID);
+    
+    AFHTTPSessionManager * manager = [AFHTTPSessionManager manager];
+    
+    manager.responseSerializer.acceptableContentTypes  = [NSSet setWithObjects:@"text/html",@"charset=utf-8", nil];
+
+    NSDictionary * parament = @{@"ID":@"3674828"};
+    [manager GET:urlStr parameters:parament success:^(NSURLSessionDataTask * _Nonnull task, id  _Nonnull responseObject) {
+        print( @"%@",[NSThread currentThread]);
+        NSDictionary * dic = responseObject;
+        [self.movieModel setValuesForKeysWithDictionary:dic];
+        //遍历model的videoList数组
+        for (NSDictionary * dict in self.movieModel.videoList) {
+            
+            [self.urlArray addObject:dict[@"repovideourlmp4"]];
+        }
+
+        
+            } failure:^(NSURLSessionDataTask * _Nonnull task, NSError * _Nonnull error) {
+    }];
+}
+- (void)playMovie
+{
+    self.movieUrlStr = self.urlArray.firstObject;
+    
+    NSURL * movieUrl = [NSURL URLWithString:_movieUrlStr];
+    
+    self.moviePlayerController = [[AVPlayerViewController alloc] init];
+    self.moviePlayerController.view.frame = CGRectMake(0, 64, self.view.frame.size.width, 300);
+    [self.view addSubview:self.moviePlayerController.view];
+    self.moviePlayerController.videoGravity = AVLayerVideoGravityResizeAspect;
+    
+    _player = [[AVPlayer alloc] initWithURL:movieUrl];
+    self.moviePlayerController.player = _player;
+    
+    [_player play];
+}
+-(void)didClickLBI:(UIBarButtonItem *)LBI
+{
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+#pragma mark- 实现代理方法
+- (BOOL)playerViewControllerShouldAutomaticallyDismissAtPictureInPictureStart:(AVPlayerViewController *)playerViewController
+{
+    
+    
+    
+    return YES;
+}
+@end

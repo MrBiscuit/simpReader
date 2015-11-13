@@ -1,0 +1,116 @@
+//
+//  LiteraryDetailViewController.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 15/10/23.
+//  Copyright © 2015年 com.sunshuaiqi. All rights reserved.
+//
+
+#import "LiteraryDetailViewController.h"
+
+#define kLiteraryDetailUrl(ID) [NSString stringWithFormat:@"http://apiv3.pento.cn/api/pin/content/%ld/show.json?token=Kx2S9nE0iHgbbSbeDdh2",ID]
+
+@interface LiteraryDetailViewController ()<UIWebViewDelegate>
+
+@end
+
+@implementation LiteraryDetailViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    UIBarButtonItem * backBI = [[UIBarButtonItem alloc] initWithImage:[AlphaIcons imageOfBackArrowWithFrame:CGRectMake(0, 0, 25, 25)] style:UIBarButtonItemStylePlain target:self action:@selector(didClickBackBI)];
+    backBI.tintColor = [UIColor blackColor];
+    self.navigationItem.leftBarButtonItem = backBI;
+    
+    
+    [self parseData];
+    
+}
+
+- (void)didClickBackBI
+{
+
+    [self.navigationController popViewControllerAnimated:YES];
+    
+}
+
+- (void)parseData
+{
+
+    UIWebView * webView = [[UIWebView alloc] initWithFrame:self.view.frame];
+
+    
+    // 让网页自己适配
+    webView.scalesPageToFit = YES;
+    
+    // 顶端禁止下拉
+    webView.scrollView.bounces = NO;
+    
+    
+    // 设置代理，用来执行网页加载完成代理方法（控制网页大小）
+    webView.delegate = self;
+    
+   
+    // 添加网页
+    [self.view addSubview:webView];
+    
+    AFHTTPSessionManager * manager = [AFHTTPSessionManager manager];
+    [manager GET:kLiteraryDetailUrl(self.ID) parameters:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nonnull responseObject) {
+        
+        // 得到json串
+        NSDictionary * dataDic = responseObject;
+        NSString * string = dataDic[@"data"];
+        
+    
+        // 加载HTML格式内容
+        [webView loadHTMLString:string baseURL:nil];
+        
+        
+    } failure:^(NSURLSessionDataTask * _Nonnull task, NSError * _Nonnull error) {
+        
+    }];
+
+
+}
+
+
+//网页加载完毕代理
+-(void)webViewDidFinishLoad:(UIWebView *)webView
+{
+    //定义JS字符串(JS代码看不懂没有关系,只要知道怎么用就行了,网上很多代码)
+    NSString *script = [NSString stringWithFormat:
+                        @"var script = document.createElement('script');"
+                        "script.type = 'text/javascript';"
+                        "script.text = \"function ResizeImages() { "
+                        "var myimg;"
+                        "var maxwidth=%f;" //屏幕宽度（缩放比例）
+                        "for(i=0;i <document.images.length;i++){"
+                        "myimg = document.images[i];"
+                        "myimg.height = maxwidth / (myimg.width/myimg.height);"
+                        "myimg.width = maxwidth;"
+                        "}"
+                        "}\";"
+                        "document.getElementsByTagName('p')[0].appendChild(script);",self.view.frame.size.width * 2.5];
+    
+    
+    //添加JS
+    [webView stringByEvaluatingJavaScriptFromString:script];
+    
+    //添加调用JS执行的语句
+    [webView stringByEvaluatingJavaScriptFromString:@"ResizeImages();"];
+    
+    // 设置字体
+    [webView stringByEvaluatingJavaScriptFromString:@"document.getElementsByTagName('body')[0].style.webkitTextSizeAdjust= '280%'"];
+}
+
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+
+
+@end

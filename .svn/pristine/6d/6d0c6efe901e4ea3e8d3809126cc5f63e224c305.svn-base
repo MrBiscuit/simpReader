@@ -1,0 +1,663 @@
+//
+//  MediaDetailsViewController.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 15/10/26.
+//  Copyright © 2015年 com.sunshuaiqi. All rights reserved.
+//
+
+#import "MediaDetailsViewController.h"
+#import <MediaPlayer/MediaPlayer.h>
+#import <AVKit/AVKit.h>
+#import <AVFoundation/AVFoundation.h>
+#import "MoviePlayerModel.h"
+#import <SVProgressHUD.h>
+#import "RS_SliderView.h"
+
+@interface MediaDetailsViewController ()<UIGestureRecognizerDelegate,RSliderViewDelegate>
+@property(nonatomic,strong)NSString * movieUrlStr;
+@property (nonatomic,strong)MoviePlayerModel * movieModel;
+@property (nonatomic,strong)NSMutableArray *urlArray;//存放播放链接
+@property (nonatomic,weak)AVPlayer *player;
+@property (nonatomic,strong)AVPlayerItem  *playerItem;
+@property (nonatomic,strong)UIImageView *movieImgView;
+@property (nonatomic,strong)UITapGestureRecognizer *tapRecognizer;
+@property (nonatomic,strong)UIButton *pauseOrPlayBtn;
+@property (nonatomic,strong)UIView *maskView;//透明遮盖
+@property (nonatomic,strong)UIView * PlayControlsView;//存放播放控件的View
+@property (nonatomic,assign)BOOL isPlaying;
+@property (nonatomic,strong)AVPlayerLayer *playerLayer;//播放器的layer
+@property (nonatomic,strong)NSTimer * timer ;
+@property (nonatomic,strong)UILabel *titleLabel;//标题
+@property (nonatomic,assign)NSInteger count;//字典中对应的video
+@property (nonatomic,strong)UIButton *fullScreenBtn;//全屏按钮
+@property (nonatomic,assign)BOOL isFullScreen;
+@property (nonatomic,strong)UIProgressView *videoProgress;
+@property (nonatomic,strong)NSString *totalTime;//总时间
+@property (nonatomic,strong)RS_SliderView *videoSlider;//滑块;
+@property (nonatomic,strong)id playbackTimeObserver;
+@property (nonatomic,strong)UILabel *timeLabel;//显示播放的总时间
+@property (nonatomic,strong)NSTimer *timer2;//隐藏playcontrol的计时器
+@end
+
+@implementation MediaDetailsViewController
+
+
+#pragma mark - 懒加载-
+//懒加载
+- (MoviePlayerModel *)movieModel
+{
+    if (!_movieModel) {
+        
+        _movieModel = [MoviePlayerModel new];
+    }
+    return _movieModel;
+}
+- (NSMutableArray *)urlArray
+{
+    if (!_urlArray) {
+        
+        _urlArray = [NSMutableArray array];
+    }
+    return _urlArray;
+}
+
+-(void)viewDidLoad
+
+{
+    [super viewDidLoad];
+    self.count = 0;
+    
+
+    //设置返回键
+    self.view.backgroundColor = [UIColor colorWithRed:0.5929 green:1.0 blue:0.8062 alpha:1.0];
+    UIBarButtonItem * LBI = [[UIBarButtonItem alloc] initWithImage:[AlphaIcons imageOfBackArrowWithFrame:CGRectMake(0, 0, 25, 25)]  style:UIBarButtonItemStylePlain target:self action:@selector(didClickLBI:)];
+    LBI.tintColor = [UIColor blackColor];
+    self.navigationItem.leftBarButtonItem = LBI;
+#pragma mark ---解析数据
+    
+    [self getData];
+}
+
+#pragma mark -- 创建视频播放器
+
+- (void)themeColorUpdate:(NSNotification*)notification
+{
+    self.view.backgroundColor = notification.userInfo[@"light"];
+}
+
+#pragma mark -- 返回事件
+- (void)didClickLBI:(UIBarButtonItem *)LBI
+{
+    
+    [SVProgressHUD dismiss];
+    [self stopPlayMovie];
+    [self.player pause];
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)stopPlayMovie
+{
+    
+    [self.player.currentItem cancelPendingSeeks];
+    [self.player.currentItem.asset cancelLoading];
+    [self.player setRate:0];
+
+    [self.player pause];
+    
+    
+}
+
+- (void)viewWillDisappear:(BOOL)animated
+{
+    [self.playerItem removeObserver:self forKeyPath:@"status"];
+    [self.playerItem removeObserver:self forKeyPath:@"loadedTimeRanges"];
+    [self.playerItem removeObserver:self forKeyPath:@"playbackBufferEmpty"];
+    [self.playerItem removeObserver:self forKeyPath:@"playbackLikelyToKeepUp"];
+    [self stopPlayMovie];
+}
+#pragma mark- 开始播放
+//播放视频
+-(void)playMovie
+{
+    self.timer  = [NSTimer scheduledTimerWithTimeInterval:0.01 target:self selector:@selector(playingAction) userInfo:nil repeats:YES];
+    // 3.将定时器添加到时间循环
+    [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
+    [self HiddenToolBar];
+    [self.maskView setAlpha:0.02];
+    [self.player play];
+    
+}
+
+-(void)HiddenToolBar
+{
+    
+    self.timer2 = [NSTimer scheduledTimerWithTimeInterval:5.0 target:self selector:@selector(hiddenplayControl) userInfo:nil repeats:NO];
+    
+}
+
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
+{
+    
+}
+
+- (void)hiddenplayControl
+{
+    
+    self.PlayControlsView.hidden =YES;
+    self.titleLabel.hidden = YES;
+    [self.timer2 invalidate];
+    
+}
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSString *,id> *)change context:(void *)context
+{
+    if ([keyPath isEqualToString:@"status"]) {
+        if ([self.playerItem status] == AVPlayerStatusReadyToPlay) {
+
+            [SVProgressHUD dismiss];
+            CMTime duration = self.playerItem.duration;// 获取视频总长度
+            CGFloat totalSecond = self.playerItem.duration.value / self.playerItem.duration.timescale;// 转换成秒
+            self.totalTime = [self convertTime:totalSecond];// 转换成播放时间
+            [self customVideoSlider:duration];// 自定义UISlider外观
+
+         [self monitoringPlayback:self.playerItem];// 监听播放状态
+        } else if ([self.playerItem status] == AVPlayerStatusFailed) {
+
+        }
+    } else if ([keyPath isEqualToString:@"loadedTimeRanges"]) {
+        NSTimeInterval timeInterval = [self availableDuration];// 计算缓冲进度
+
+        CMTime duration = self.playerItem.duration;
+        CGFloat totalDuration = CMTimeGetSeconds(duration);
+        [self.videoProgress setProgress:timeInterval / totalDuration animated:YES];
+    }
+    if (object == _playerItem && [keyPath isEqualToString:@"playbackBufferEmpty"])
+    {
+        if (_playerItem.playbackBufferEmpty) {
+            
+            [SVProgressHUD show];
+            [self.player pause];
+        }
+    }
+    
+    else if (object == _playerItem && [keyPath isEqualToString:@"playbackLikelyToKeepUp"]&&self.isPlaying==YES)
+    {
+        if (_playerItem.playbackLikelyToKeepUp)
+        {
+            
+            [SVProgressHUD dismiss];
+            [self playMovie];
+            
+        }
+    }
+    
+}
+
+
+
+
+#pragma mark ---- 监控播放时间变化------
+- (void)monitoringPlayback:(AVPlayerItem *)playerItem {
+    
+    MediaDetailsViewController * weakSelf = self;
+    self.playbackTimeObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMake(1, 1) queue:NULL usingBlock:^(CMTime time) {
+        CGFloat currentSecond = playerItem.currentTime.value/playerItem.currentTime.timescale;// 计算当前在第几秒
+        [weakSelf updateVideoSlider:currentSecond];
+        NSString *timeString = [weakSelf convertTime:currentSecond];
+        weakSelf.timeLabel.text = [NSString stringWithFormat:@"%@/%@",timeString,weakSelf.totalTime];
+    }];
+
+}
+
+
+#pragma mark-------播放结束----------
+-(void)sliderValueChangeEnded:(RS_SliderView *)sender
+{
+    RS_SliderView * slider = (RS_SliderView *)sender;
+    CMTime duration = self.playerItem.duration;
+            CGFloat totalDuration = CMTimeGetSeconds(duration);
+    CMTime changedTime = CMTimeMakeWithSeconds(slider.value*totalDuration, 1);
+
+    __weak typeof(self) weakSelf = self;
+    
+    [self.player seekToTime:changedTime completionHandler:^(BOOL finished) {
+       
+        [weakSelf playMovie];
+        [weakSelf.pauseOrPlayBtn setImage:[[AlphaIcons imageOfPauseButtonWithFrame:weakSelf.pauseOrPlayBtn.bounds] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forState:UIControlStateNormal];
+    }];
+    
+}
+
+- (void)sliderValueChanged:(RS_SliderView *)sender
+{
+
+    [self.timer2 invalidate];
+    self.timer2 = nil;
+    self.timer2 = [NSTimer scheduledTimerWithTimeInterval:5.0 target:self selector:@selector(hiddenplayControl) userInfo:nil repeats:NO];
+    print(@"slider改变了！！");
+    
+}
+
+
+#pragma mark -----自定义slider外观-----
+- (void)customVideoSlider:(CMTime)duration {
+    [self.videoSlider setValue:CMTimeGetSeconds(duration)];
+}
+
+#pragma mark ---更新slider
+- (void)updateVideoSlider:(CGFloat)currentSecond {
+    [self.videoSlider setValue:currentSecond];
+}
+#pragma mark ------时间转换------
+- (NSString *)convertTime:(CGFloat)second{
+    NSDate *d = [NSDate dateWithTimeIntervalSince1970:second-8*60*60];
+
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    if (second/3600 >= 1) {
+        [formatter setDateFormat:@"HH:mm:ss"];
+    } else {
+        [formatter setDateFormat:@"mm:ss"];
+    }
+    NSString *showtimeNew = [formatter stringFromDate:d];
+    return showtimeNew;
+
+}
+
+// 计算缓冲进度
+- (NSTimeInterval)availableDuration {
+    NSArray *loadedTimeRanges = [[self.player currentItem] loadedTimeRanges];
+    CMTimeRange timeRange = [loadedTimeRanges.firstObject CMTimeRangeValue];// 获取缓冲区域
+    float startSeconds = CMTimeGetSeconds(timeRange.start);
+    float durationSeconds = CMTimeGetSeconds(timeRange.duration);
+    
+    NSTimeInterval result = startSeconds + durationSeconds;// 计算缓冲总进度
+    
+    return result;
+}
+- (void)playingAction
+{
+    CGFloat time = self.player.currentTime.value; // self.player.currentTime.timescale;
+    
+    if (time > 0) {
+        [SVProgressHUD dismiss];
+        self.movieImgView.hidden = YES;
+        [self.timer invalidate];
+        self.timer = nil;
+        
+    }
+}
+
+//暂停
+- (void)pausePlayMovie
+{
+    [self.player pause];
+}
+- (void)dealloc
+{
+    
+    
+}
+#pragma mark- 点击暂停
+- (void)didClickpauseOrPlayBtn:(UIButton*)pauseBI
+{
+    
+    // 默认是 selected = NO
+    if (self.isPlaying) {
+        
+        [pauseBI setImage:[[AlphaIcons imageOfPlayButtonWithFrame:pauseBI.bounds] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]forState:UIControlStateNormal];
+        // 暂停
+        [self pausePlayMovie];
+        self.isPlaying = NO;
+    }else {
+        
+        // 风火轮
+
+        [SVProgressHUD setOffsetFromCenter:UIOffsetMake(0, -74)];
+        [SVProgressHUD setBackgroundColor:[UIColor clearColor]];
+        [SVProgressHUD showWithStatus:@"loading" maskType:SVProgressHUDMaskTypeNone];
+        
+        // 播放
+        [pauseBI setImage:[[AlphaIcons imageOfPauseButtonWithFrame:pauseBI.bounds] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]forState:UIControlStateNormal];
+        
+        [self playMovie];
+        self.isPlaying = YES;
+    }
+    
+    
+}
+
+//获取数据
+
+-(void)didClickMask:(UITapGestureRecognizer *)recognizer
+{
+    print(@"mask被点击了！！");
+    self.PlayControlsView.hidden = NO;
+    self.titleLabel.hidden = NO;
+    
+    [self HiddenToolBar];
+    
+    
+}
+
+- (void)didClickfullScreenBtn:(UIButton *)fullScreenBtn
+
+
+{
+    if ([UIDevice currentDevice].orientation != UIDeviceOrientationPortrait) {
+        
+        NSNumber * value = [NSNumber numberWithInt:UIInterfaceOrientationPortrait  ];
+        [[UIDevice currentDevice] setValue:value forKey:@"orientation"];
+    }else {
+    
+       NSNumber * value = [NSNumber numberWithInt:UIInterfaceOrientationLandscapeLeft ];
+       [[UIDevice currentDevice] setValue:value forKey:@"orientation"];
+
+    
+   }
+    
+
+
+}
+
+#pragma mark- 获取数据
+- (void)getData
+{
+    NSString * urlStr = [NSString stringWithFormat:@"http://mobile.open.163.com/movie/%@/getMoviesForAndroid.htm",self.movieID];
+    AFHTTPSessionManager * manager = [AFHTTPSessionManager manager];
+    manager.responseSerializer.acceptableContentTypes  = [NSSet setWithObjects:@"text/html",@"charset=utf-8", nil];
+    NSDictionary * parament = @{@"Server":@"nginx"};
+    [manager GET:urlStr parameters:parament success:^(NSURLSessionDataTask * _Nonnull task, id  _Nonnull responseObject) {
+        NSDictionary * dic = responseObject;
+        [self.movieModel setValuesForKeysWithDictionary:dic];
+        //遍历model的videoList数组
+        
+        for (int i = 0 ; i < self.movieModel.videoList.count;i++ ) {
+            
+            NSDictionary * dict = self.movieModel.videoList[i];
+            if ([dic[@"mid"]isEqualToString:self.midid]) {
+                self.count =i;
+                [self.urlArray addObject:dict[@"repovideourlmp4"]];
+            }else{
+                
+                [self.urlArray addObject:dict[@"repovideourlmp4"]];
+                
+            }
+        }
+        
+        //设置播放器layer上层的View
+        self.maskView = [[UIView alloc] initWithFrame:CGRectMake(0, 64, self.view.frame.size.width, 300)];
+        self.maskView.backgroundColor = [UIColor blackColor];
+        /**
+         *  打开交互给mask添加手势
+         */
+        self.maskView.userInteractionEnabled = YES;
+        self.maskView.alpha = 1.0;
+        self.tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(didClickMask:)];
+        _tapRecognizer.delegate = self;
+        [_maskView addGestureRecognizer:_tapRecognizer];
+        [self.view addSubview:_maskView];
+        if (self.urlArray.count != 0) {
+           self.movieUrlStr = self.urlArray[0];
+        }
+        NSURL * url = [NSURL URLWithString:self.movieUrlStr];
+        self.playerItem = [AVPlayerItem playerItemWithURL:url];
+#pragma mark---------给self的item添加观察者-------
+        //观察加载时间
+        [self.playerItem addObserver:self forKeyPath:@"loadedTimeRanges" options:NSKeyValueObservingOptionNew context:nil];
+        [self.playerItem addObserver:self forKeyPath:@"playbackBufferEmpty" options:NSKeyValueObservingOptionNew context:nil];
+        [self.playerItem addObserver:self forKeyPath:@"playbackLikelyToKeepUp" options:NSKeyValueObservingOptionNew context:nil];
+        
+        
+        //观察item状态
+        [self.playerItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
+        
+        //创建播放器
+        self.player = [AVPlayer playerWithPlayerItem:self.playerItem];
+        self.playerLayer = [AVPlayerLayer playerLayerWithPlayer:self.player];
+        _playerLayer.frame = self.maskView.frame;
+        _playerLayer.videoGravity = AVLayerVideoGravityResize;
+        self.navigationItem.title = self.movieModel.title;
+        [self.view.layer addSublayer:_playerLayer];
+        self.movieImgView = [[UIImageView alloc] initWithFrame:_maskView.bounds];
+        [self.movieImgView sd_setImageWithURL:[NSURL URLWithString:self.movieImgUrl]];
+        //打开imgview的交互
+        self.movieImgView.userInteractionEnabled = YES;
+        self.movieImgView.backgroundColor = [UIColor colorWithRed:0.4995 green:1.0 blue:0.8286 alpha:1.0];
+        self.movieImgView.alpha = 1.0;
+        [_maskView addSubview:self.movieImgView];
+        
+        //设置标题
+        self.titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 100, ScreenWidth, 30)];
+        self.titleLabel.text = self.movieModel.title;
+        self.titleLabel.textAlignment = NSTextAlignmentCenter;
+        [self.titleLabel setTextColor:[UIColor whiteColor]];
+        self.titleLabel.backgroundColor = [UIColor colorWithRed:0.0 green:0.0 blue:0.0 alpha:0.5];
+        [self.view addSubview:_titleLabel];
+        [self.titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+            if ([[UIDevice currentDevice] orientation] == UIDeviceOrientationPortrait){
+                make.top.equalTo(self.view).offset(64);
+            }
+            else{
+                make.top.equalTo(self.view.mas_top);
+             }
+            make.left.and.right.mas_equalTo(self.view);
+            make.height.mas_equalTo(30);
+            
+        }];
+        self.PlayControlsView = [[UIView alloc] initWithFrame:CGRectMake(0, 370-36, ScreenWidth, 45)];
+        _PlayControlsView.backgroundColor = [UIColor colorWithRed:0 green:0.6863 blue:0.9412 alpha:0.1];
+        [self.view addSubview:_PlayControlsView];
+        [self.PlayControlsView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.left.and.right.equalTo(self.view);
+            make.bottom.equalTo(self.maskView.mas_bottom);
+            make.height.mas_equalTo(45);
+            
+        }];
+        
+        
+        //设置暂停按钮
+        self.pauseOrPlayBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+        
+        self.pauseOrPlayBtn.tintColor = [UIColor colorWithRed:0.051 green:0.4275 blue:1.0 alpha:1.0];
+        
+        self.pauseOrPlayBtn.frame = CGRectMake(10, 0, 45, 45);
+        
+        [self.pauseOrPlayBtn setImage:[[AlphaIcons imageOfPlayButtonWithFrame:self.pauseOrPlayBtn.bounds] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forState:UIControlStateNormal];
+        
+        [self.pauseOrPlayBtn addTarget:self action:@selector(didClickpauseOrPlayBtn:) forControlEvents:UIControlEventTouchUpInside];
+        [self.PlayControlsView addSubview:self.pauseOrPlayBtn];
+        
+#pragma mark--------添加滑块--------
+        //progressView
+        self.videoProgress = [[UIProgressView alloc] initWithProgressViewStyle:UIProgressViewStyleDefault];
+        self.videoProgress.frame = CGRectMake(0, 0, ScreenWidth, 5);
+        //slider
+        self.videoSlider = [[RS_SliderView alloc] initWithFrame:CGRectMake(0,0, ScreenWidth, 10) andOrientation:Horizontal];
+        
+        self.videoSlider.delegate = self;
+        [self.videoSlider setColorsForBackground:[UIColor colorWithRed:0.3556 green:1.0 blue:0.7555 alpha:0.28]
+                                      foreground:[UIColor colorWithRed:0.0 green:106.0/255.0 blue:95.0/255.0 alpha:1.0]
+                                          handle:[UIColor colorWithRed:0.0 green:205.0/255.0 blue:184.0/255.0 alpha:1.0]
+                                          border:[UIColor clearColor]];
+        self.videoSlider.label.font = [UIFont fontWithName:@"Helvetica" size:25];
+        self.videoSlider.label.textColor = [UIColor colorWithRed:0.0 green:205.0/255.0 blue:184.0/255.0 alpha:1.0];
+        [self.PlayControlsView addSubview:self.videoProgress];
+        [self.PlayControlsView addSubview:self.videoSlider];
+//        [self.videoSlider mas_makeConstraints:^(MASConstraintMaker *make) {
+//            make.width.equalTo(_videoProgress);
+//            make.height.mas_equalTo(10);
+//            make.center.equalTo(_videoProgress);
+//        }];
+#pragma mark------添加timelabel--------
+        
+        self.timeLabel = [[UILabel alloc] initWithFrame:CGRectMake(145, 15,100, 30)];
+        self.timeLabel.backgroundColor = [UIColor colorWithRed:0.4 green:1.0 blue:1.0 alpha:0.419261853448276];
+         [self.PlayControlsView addSubview:self.timeLabel];
+        [_timeLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.center.equalTo(self.PlayControlsView);
+            make.width.mas_equalTo(150);
+            make.height.mas_equalTo(30);
+        }];
+    //添加全屏按钮
+        
+        self.fullScreenBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+        
+        self.fullScreenBtn.frame = CGRectMake(self.PlayControlsView.frame.size.width - 50, 0, 45, 45);
+        
+        [self.fullScreenBtn setImage:[AlphaIcons imageOfFullScreenButtonWithFrame:self.fullScreenBtn.bounds]forState:UIControlStateNormal];
+        [self.fullScreenBtn addTarget:self action:@selector(didClickfullScreenBtn:) forControlEvents:UIControlEventTouchUpInside];
+        [self.PlayControlsView addSubview:self.fullScreenBtn];
+   [self.fullScreenBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+       make.top.equalTo(self.PlayControlsView.mas_top);
+       make.bottom.equalTo(self.PlayControlsView);
+       make.right.equalTo(self.PlayControlsView);
+       make.left.mas_equalTo(self.PlayControlsView.mas_right).offset(-50);
+       
+       
+   }];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(deviceDidRotate:) name:UIDeviceOrientationDidChangeNotification object:nil];
+        [self addIntroduce];
+        
+    } failure:^(NSURLSessionDataTask * _Nonnull task, NSError * _Nonnull error) {
+        
+    }];
+}
+
+
+-(void)deviceDidRotate:(NSNotification *)notification{
+    if ([[UIDevice currentDevice] orientation] == UIDeviceOrientationLandscapeRight | [[UIDevice currentDevice] orientation] == UIDeviceOrientationLandscapeLeft) {  // 如果是左右横向
+       
+        if ([SVProgressHUD isVisible]) {
+            [SVProgressHUD dismiss];
+            [SVProgressHUD setOffsetFromCenter:UIOffsetMake(0, 0)];
+            [SVProgressHUD show];
+
+        }
+        [self.fullScreenBtn setImage:[AlphaIcons imageOfFullScreenButtonReverseWithFrame:self.fullScreenBtn.bounds] forState:UIControlStateNormal];
+        UIWindow * keywindow = [UIApplication sharedApplication].keyWindow;
+        self.playerLayer.frame = keywindow.frame;
+         self.movieImgView.frame = CGRectMake(0, -100, ScreenWidth, ScreenHeight+80 );
+        self.videoSlider.frame = CGRectMake(0,0, self.view.frame.size.width, 10);
+       self.maskView.frame = CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height);
+        self.navigationController.navigationBar.hidden = YES;
+        self.videoProgress.frame = CGRectMake(0, 0, ScreenWidth, 5);
+
+        [self.titleLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
+            make.top.equalTo(self.view.mas_top);
+            make.left.and.right.mas_equalTo(self.view);
+            make.height.mas_equalTo(30);
+        }];
+    }else{ // 如果是竖屏
+        [self.fullScreenBtn setImage:[AlphaIcons imageOfFullScreenButtonWithFrame:self.fullScreenBtn.bounds] forState:UIControlStateNormal];
+        self.videoProgress.frame = CGRectMake(0, 0, ScreenWidth, 5);
+        self.videoSlider.frame = CGRectMake(0,0, self.view.frame.size.height, 10);
+        self.maskView.frame = CGRectMake(0, 64, self.view.frame.size.width, 300);
+        
+        [self.titleLabel mas_remakeConstraints:^(MASConstraintMaker *make){
+            make.top.equalTo(self.view).offset(64);
+            make.left.and.right.mas_equalTo(self.view);
+            make.height.mas_equalTo(30);
+            
+            
+        }];
+        if ([SVProgressHUD isVisible]) {
+            [SVProgressHUD dismiss];
+            [SVProgressHUD setOffsetFromCenter:UIOffsetMake(0, -74)];
+            [SVProgressHUD show];
+        }
+        
+        self.movieImgView.frame = _maskView.bounds;
+        
+        self.navigationController.navigationBar.hidden = NO;
+
+        self.playerLayer.frame = CGRectMake(0, 64, self.view.frame.size.width, 300);
+        self.PlayControlsView.frame = CGRectMake(0, ScreenHeight - 45, ScreenWidth, 45);
+    }
+}
+
+#pragma mark-------简介----------
+- (void)addIntroduce
+{
+//简介
+    UILabel * subtitle = [UILabel new];
+    
+    subtitle.text = @"简介";
+    subtitle.textAlignment = NSTextAlignmentCenter;
+    
+    [self.view addSubview:subtitle];
+    [subtitle mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self.maskView.mas_bottom);
+        make.left.equalTo(self.view);
+        make.right.equalTo(self.view);
+        make.height.mas_equalTo(40);
+    }];
+    
+    UILabel * titleLabel = [UILabel new];
+    titleLabel.text = @"标题:";
+    [self.view addSubview:titleLabel];
+    [titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(subtitle.mas_bottom);
+        make.left.equalTo(self.view);
+        make.width.mas_equalTo(50);
+        make.height.mas_equalTo(30);
+    }];
+    //标题
+    UILabel * titleContentLabel = [UILabel new];
+    titleContentLabel.text = self.movieModel.title;
+    [self.view addSubview:titleContentLabel];
+    [titleContentLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(titleLabel.mas_right);
+        make.right.mas_equalTo(self.view).offset(-10);
+        make.height.mas_equalTo(30);
+        make.top.equalTo(subtitle.mas_bottom);
+    }];
+    
+    UILabel * category = [UILabel new];
+    category.text = @"分类:";
+    [self.view addSubview:category];
+    [category mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(titleLabel.mas_bottom);
+        make.left.equalTo(self.view);
+        make.width.mas_equalTo(50);
+        make.height.mas_equalTo(30);
+    }];
+//分类
+    UILabel * categoryContent = [UILabel new];
+    categoryContent.text = self.movieModel.tags;
+    [self.view addSubview:categoryContent];
+    [categoryContent mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(titleLabel.mas_bottom);
+        make.left.equalTo(category.mas_right);
+        make.right.equalTo(self.view.mas_right);
+        make.height.mas_equalTo(30);
+        
+    }];
+    
+    UILabel * desc = [UILabel new];
+    desc.text = @"描述:";
+    [self.view addSubview:desc];
+    [desc mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(category.mas_bottom);
+        make.left.equalTo(self.view);
+        make.width.mas_equalTo(50);
+        make.height.mas_equalTo(30);
+    }];
+
+   //描述
+    UITextView * textView = [UITextView new];
+     textView.text = [NSString stringWithFormat:@"      %@",self.movieModel.desc];
+    textView.font = [UIFont systemFontOfSize:17];
+    textView.editable = NO;
+     [self.view addSubview:textView];
+    textView.backgroundColor = self.view.backgroundColor;
+    [textView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(desc.mas_bottom);
+        make.left.equalTo(self.view);
+        make.right.equalTo(self.view);
+        make.bottom.equalTo(self.view);
+    
+    }];
+}
+
+
+@end

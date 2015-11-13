@@ -1,0 +1,23 @@
+//
+//  UIButton+ButtonFactory.h
+//  ProjectAlpha
+//
+//  Created by lanou3g on 10/22/15.
+//  Copyright © 2015 com.sunshuaiqi. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface UIButton (ButtonFactory)
++ (UIButton *)roundButtonWithColor:(UIColor *)color PlacedAtButton:(UIButton *)rootButton addToView:(UIView *)view;
+
++ (UIButton *)roundButtonWithImage:(UIImage *)image PlacedAtButton:(UIButton *)rootButton addToView:(UIView *)view;
+
++ (UIButton *)modernSqureButtonOnView:(UIView *)view;
+
++ (UIButton *)modernRectangleButtonOnView:(UIView *)view withBackgroundColor:(UIColor *)color;
+
++ (UIButton *)modernColorButtonWithColor:(UIColor *)color PlacedAtSpot:(int)spotNumber addToView:(UIView *)view;
+
++ (UIButton *)modernPortraitButtonWithImage:(UIImage *)image PlacedAtSpot:(int)spotNumber addToView:(UIView *)view;
+@end

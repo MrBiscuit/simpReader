@@ -1,0 +1,16 @@
+//
+//  DataHandle.h
+//  ProjectAlpha
+//
+//  Created by lanou3g on 10/30/15.
+//  Copyright © 2015 com.sunshuaiqi. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface DataHandle : NSObject
+@property(nonatomic, assign) BOOL sideBarHasShown;
+
++ (instancetype)SharedData;
+
+@end

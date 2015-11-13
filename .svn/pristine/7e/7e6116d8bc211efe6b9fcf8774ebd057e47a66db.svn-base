@@ -1,0 +1,13 @@
+//
+//  UIButton+ButtonFactory.h
+//  ProjectAlpha
+//
+//  Created by lanou3g on 10/22/15.
+//  Copyright © 2015 com.sunshuaiqi. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface UIButton (ButtonFactory)
++ (UIButton *)roundButtonWithTitle:(NSString *)title Color:(UIColor *)backgroundColor CornerRadius:(CGFloat)cornerRadius AddToView:(UIView *)view;
+@end

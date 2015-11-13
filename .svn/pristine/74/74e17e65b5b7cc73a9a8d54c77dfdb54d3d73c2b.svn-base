@@ -1,0 +1,83 @@
+//
+//  MoodLogTableViewCell.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 15/10/27.
+//  Copyright © 2015年 com.sunshuaiqi. All rights reserved.
+//
+
+#import "MoodLogTableViewCell.h"
+
+@implementation MoodLogTableViewCell
+
+- (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier
+{
+    
+    self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
+    self.contentView.backgroundColor = [UIColor colorWithRed:0.883 green:0.999 blue:0.646 alpha:1.000];
+    if (self) {
+        
+        // 背景视图
+        _bgView = [UIView new];
+        _bgView.layer.masksToBounds = YES;
+        _bgView.layer.cornerRadius = 10;
+        _bgView.backgroundColor = [UIColor colorWithRed:0.993 green:1.000 blue:1.000 alpha:0.963];
+        [self addSubview:_bgView];
+        
+        [_bgView mas_makeConstraints:^(MASConstraintMaker *make) {
+            
+            make.top.equalTo(self).offset(10);
+            make.right.equalTo(self.mas_right).offset(-20);
+            make.bottom.equalTo(self.mas_bottom).offset(-5);
+            make.left.equalTo(self.mas_left).offset(20);
+        }];
+        
+        
+        // 标题
+        _titleLabel = [UILabel new];
+        [self.bgView addSubview:_titleLabel];
+        _titleLabel.text = @"心向阳光便是晴天";
+        _titleLabel.textAlignment = NSTextAlignmentCenter;
+        [_titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+            
+            make.top.and.left.and.right.equalTo(_bgView);
+            make.height.mas_equalTo(30);
+            
+        }];
+        
+        
+        // 图片
+        _imgView = [UIImageView new];
+       
+        _imgView.layer.masksToBounds = YES;
+        _imgView.layer.cornerRadius = 10;
+        [self addSubview:_imgView];
+        //[self bringSubviewToFront:_imgView];
+        [_imgView mas_makeConstraints:^(MASConstraintMaker *make) {
+            
+            make.top.equalTo(_titleLabel.mas_bottom);
+            make.left.mas_equalTo(self.bgView).offset(-10);
+            make.right.equalTo(_bgView.mas_right).offset(10);
+            make.bottom.equalTo(_bgView.mas_bottom).offset(-12);
+            
+        }];
+        
+    
+    }
+    
+    return self;
+}
+
+
+
+- (void)awakeFromNib {
+    // Initialization code
+}
+
+- (void)setSelected:(BOOL)selected animated:(BOOL)animated {
+    [super setSelected:selected animated:animated];
+
+    // Configure the view for the selected state
+}
+
+@end

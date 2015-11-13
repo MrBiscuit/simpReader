@@ -1,0 +1,2 @@
+AVOSCLOUDSNS_LIBRARY_SEARCH_PATHS = "$(PODS_ROOT)/AVOSCloudSNS"
+AVOSCLOUDSNS_OTHER_LDFLAGS = $(inherited) -undefined dynamic_lookup -l"AVOSCloudSNSLib"

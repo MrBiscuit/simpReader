@@ -1,0 +1,97 @@
+//
+//  MediaDetailsViewController.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 15/10/26.
+//  Copyright © 2015年 com.sunshuaiqi. All rights reserved.
+//
+
+#import "MediaDetailsViewController.h"
+#import <MediaPlayer/MediaPlayer.h>
+#import <AVKit/AVKit.h>
+#import <AVFoundation/AVFoundation.h>
+
+@interface MediaDetailsViewController ()
+@property(nonatomic,strong)NSString * movieUrlStr;
+@property (nonatomic,strong)AVPlayerViewController * moviePlayerController;
+@end
+
+@implementation MediaDetailsViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.view.backgroundColor = [UIColor colorWithRed:0.5929 green:1.0 blue:0.8062 alpha:1.0];
+    UIBarButtonItem * LBI = [[UIBarButtonItem alloc] initWithTitle:@"返回" style:UIBarButtonItemStylePlain target:self action:@selector(didClickLBI:)];
+    self.navigationItem.leftBarButtonItem = LBI;
+    [self getData];
+
+    
+self.movieUrlStr = @"http://mov.bn.netease.com/mobilev/2011/5/E/6/S72MLU1E6.mp4";
+    NSURL * movieUrl = [NSURL URLWithString:_movieUrlStr];
+    
+    self.moviePlayerController = [[AVPlayerViewController alloc] init];
+    self.moviePlayerController.showsPlaybackControls =YES;
+    self.moviePlayerController.videoGravity = AVLayerVideoGravityResize;
+    self.moviePlayerController.allowsPictureInPicturePlayback = YES;
+
+    self.view.autoresizesSubviews = YES;
+    AVPlayer * player = [[AVPlayer alloc] initWithURL:movieUrl];
+    
+
+    self.moviePlayerController.player = player;
+     self.moviePlayerController.view.frame = CGRectMake(0, 64, self.view.frame.size.width, 400);
+    [self addChildViewController:self.moviePlayerController];
+    [self.view addSubview:self.moviePlayerController.view];
+    [player play];
+    
+}
+//获取数据
+
+- (void)getData
+{
+    NSString * urlStr = [NSString stringWithFormat:@"http://mobile.open.163.com/movie/%@/getMoviesForAndroid.htm",self.movieID];
+    print(@"%@",self.movieID);
+    
+    AFHTTPSessionManager * manager = [AFHTTPSessionManager manager];
+    
+    manager.responseSerializer.acceptableContentTypes  = [NSSet setWithObjects:@"text/html",@"charset=utf-8", nil];
+    [manager GET:urlStr parameters:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nonnull responseObject) {
+        
+        NSLog(@"---------------------------%@",responseObject);
+        
+    } failure:^(NSURLSessionDataTask * _Nonnull task, NSError * _Nonnull error) {
+        
+        print(@"%@",error);
+        
+    }];
+    
+    
+    
+    
+    
+}
+
+
+
+
+-(void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
+{
+    
+//      [_moviePlayer play];
+    
+    
+}
+
+-(void)didClickLBI:(UIBarButtonItem *)LBI
+{
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+#pragma mark- 实现代理方法
+- (BOOL)playerViewControllerShouldAutomaticallyDismissAtPictureInPictureStart:(AVPlayerViewController *)playerViewController
+{
+    
+    
+    
+    return YES;
+}
+@end

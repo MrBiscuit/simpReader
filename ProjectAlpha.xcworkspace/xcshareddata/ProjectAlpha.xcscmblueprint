@@ -1,0 +1,35 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "0be1fe37-7321-4025-aa8a-2263129830de",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+    "b94b7986-1281-49be-af5a-acf13b57e66c" : {
+
+    },
+    "0be1fe37-7321-4025-aa8a-2263129830de" : {
+
+    }
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "b94b7986-1281-49be-af5a-acf13b57e66c" : 0,
+    "0be1fe37-7321-4025-aa8a-2263129830de" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "F2E2A0BE-31E4-4AB0-9B6E-E0AA584EBA28",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "b94b7986-1281-49be-af5a-acf13b57e66c" : "Project_Alpha\/",
+    "0be1fe37-7321-4025-aa8a-2263129830de" : "project_beta\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "ProjectAlpha",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "ProjectAlpha.xcworkspace",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "http:\/\/www.svnchina.com\/svn\/project_beta",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Subversion",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "0be1fe37-7321-4025-aa8a-2263129830de"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "http:\/\/www.svnchina.com\/svn\/project_alpha",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Subversion",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "b94b7986-1281-49be-af5a-acf13b57e66c"
+    }
+  ]
+}

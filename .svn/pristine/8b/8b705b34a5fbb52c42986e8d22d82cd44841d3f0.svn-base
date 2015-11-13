@@ -1,0 +1,8 @@
+pod 'SDWebImage', '~> 3.7.3'
+
+pod 'Masonry', '~> 0.6.3'
+pod 'SDCycleScrollView', '~> 1.3'
+
+pod 'Masonry', '~> 0.6.3'
+pod 'JHChainableAnimations', '~> 1.3.0'
+pod 'AFNetworking', '~> 3.0.0-beta.1'

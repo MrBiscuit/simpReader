@@ -1,0 +1,27 @@
+//
+//  DataHandle.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 10/30/15.
+//  Copyright © 2015 com.sunshuaiqi. All rights reserved.
+//
+
+#import "DataHandle.h"
+#import "SideBarViewController.h"
+@implementation DataHandle
+
++ (instancetype)SharedData{
+    
+    static DataHandle *sharedManager = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        sharedManager = [self new];
+    });
+    
+    return sharedManager;
+}
+
+
+
+
+@end

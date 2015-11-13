@@ -1,0 +1,18 @@
+//
+//  ViewController.h
+//  sideBar
+//
+//  Created by lanou3g on 10/27/15.
+//  Copyright © 2015 com.sunshuaiqi. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+
+@interface SideBarViewController : UIViewController
+
+@property(nonatomic, assign) BOOL sideBarHasShown;
+@property(nonatomic, strong) UITableView *tableView;
+@property(nonatomic, strong) UIButton *portraitButton;
+@end
+

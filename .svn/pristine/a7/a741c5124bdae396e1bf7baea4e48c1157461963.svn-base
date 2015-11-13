@@ -1,0 +1,84 @@
+//
+//  HistoryTableViewCell.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 11/2/15.
+//  Copyright © 2015 com.sunshuaiqi. All rights reserved.
+//
+
+#import "HistoryTableViewCell.h"
+
+@implementation HistoryTableViewCell
+-(instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier{
+
+    if (self = [super initWithStyle:style reuseIdentifier:reuseIdentifier]) {
+        self.backgroundColor = [UIColor clearColor];  // 设置透明背景
+        // 时间标签初始化
+        _dateLabel = [UILabel new];
+        _dateLabel.clipsToBounds = YES;
+        _dateLabel.backgroundColor = [UIColor whiteColor];  // 时间标签背景颜色
+        _dateLabel.layer.cornerRadius = 30; // 时间标签圆弧角度
+        _dateLabel.layer.borderColor = [UIColor colorWithRed:0 green:0.6863 blue:0.9412 alpha:0.6].CGColor; // 时间标签边框颜色
+        _dateLabel.layer.borderWidth = 2.0f; // 时间标签边框宽度
+        [self addSubview:_dateLabel];
+        [_dateLabel mas_makeConstraints:^(MASConstraintMaker *make){
+            make.left.and.top.equalTo(self); // ←↑等于自己的视图
+            make.size.mas_equalTo(60); // 尺寸: 20像素
+        }];
+        // 时间标签文字设置
+        _dateLabel.textAlignment = NSTextAlignmentCenter;
+        _dateLabel.font = [UIFont fontWithName:@"Arial Unicode MS" size:13.0f];
+        _dateLabel.textColor = [UIColor colorWithRed:0 green:0.6863 blue:0.9412 alpha:1];
+        // 图片  
+        _imgView = [UIImageView new];
+        [self addSubview:_imgView];
+        [_imgView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.left.equalTo(_dateLabel.mas_right);
+            make.top.and.bottom.and.right.equalTo(self);
+            
+        }];
+        
+        // 标题
+        _titleLabel = [UILabel new];
+        [self.imgView addSubview:_titleLabel];
+        _titleLabel.backgroundColor = [UIColor colorWithRed:0.329 green:0.765 blue:0.945 alpha:0.928]; // 标题背景颜色
+        _titleLabel.textColor = [UIColor whiteColor];
+        _titleLabel.textAlignment = NSTextAlignmentCenter;
+        [_titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.height.mas_equalTo(30);
+            make.bottom.right.mas_equalTo(self);
+            make.left.equalTo(_dateLabel.mas_right);
+        }];
+        
+    }
+    return self;
+}
+
+- (void)setModel:(FavoriteModel *)model
+{
+
+    if (_model != model) {
+        
+        _model = model;
+    
+        _dateLabel.text = [_model.BrowseTime componentsSeparatedByString:@" "].firstObject;; // 时间
+        _titleLabel.text = _model.titleStr; // 标题
+        [_imgView sd_setImageWithURL:[NSURL URLWithString:_model.imgUrl]]; // 图片
+        
+    }
+
+
+}
+
+
+- (void)awakeFromNib {
+    
+}
+
+- (void)setSelected:(BOOL)selected animated:(BOOL)animated {
+    [super setSelected:selected animated:animated];
+
+    // Configure the view for the selected state
+}
+
+@end

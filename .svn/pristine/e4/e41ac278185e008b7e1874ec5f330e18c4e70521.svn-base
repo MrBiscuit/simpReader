@@ -1,0 +1,351 @@
+//
+//  ProfileViewController.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 10/22/15.
+//  Copyright © 2015 com.sunshuaiqi. All rights reserved.
+//
+
+#import "ProfileViewController.h"
+#import "UIButton+ButtonFactory.h"
+#import "AlphaIcons.h"
+
+typedef enum : NSUInteger {
+    ButtonTouchDown,
+    ButtonTouchUp
+} ButtonActionType;
+
+@interface ProfileViewController ()
+
+#pragma mark- Buttons
+@property(nonatomic, strong) UIButton *portraitButton;
+@property(nonatomic, strong) UIButton *feedbackButton;
+@property(nonatomic, strong) UIButton *favoriteButton;
+@property(nonatomic, strong) UIButton *historyButton;
+@property(nonatomic, strong) UIButton *shareButton;
+@property(nonatomic, strong) UIButton *offlineDownloadButton;
+@property(nonatomic, strong) UIButton *settingsButton;
+@property(nonatomic, strong) UILabel *portraitLabel;
+
+#pragma mark SubButtons
+@property(nonatomic, strong) UIButton *nightModeButton;
+@property(nonatomic, strong) UIButton *themeColorButton;
+@property(nonatomic, strong) UIButton *cleanCacheButton;
+@property(nonatomic, assign) CGFloat cacheCount;
+@property(nonatomic, assign) BOOL settingsWasShown;
+@property(nonatomic, assign) float offsetFactor;
+@end
+
+@implementation ProfileViewController
+
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    _offsetFactor = (123 / 375.0) * self.view.frame.size.width;
+    _cacheCount = 26.5;
+    [self initializeSubViews]; // 初始化子视图
+    
+}
+
+- (void)initializeSubViews{
+    
+    // 创建头像按钮
+    _portraitButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [_portraitButton setImage:[UIImage imageNamed:@"portrait"] forState:UIControlStateNormal];
+    _portraitButton.layer.cornerRadius = 0.32 * self.view.frame.size.width / 2;
+    _portraitButton.clipsToBounds = YES;
+    _portraitButton.layer.borderWidth = 1;
+    _portraitButton.layer.borderColor = [UIColor lightGrayColor].CGColor;
+    
+    [self.view addSubview:_portraitButton];
+    
+    // 创建周围按钮
+    _feedbackButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    _favoriteButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    _historyButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    _shareButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    _offlineDownloadButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    _settingsButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    
+    [self.view addSubview:_feedbackButton];
+    [self.view addSubview:_favoriteButton];
+    [self.view addSubview:_historyButton];
+    [self.view addSubview:_shareButton];
+    [self.view addSubview:_offlineDownloadButton];
+    [self.view addSubview:_settingsButton];
+    
+    // 设置tag值
+    _feedbackButton.tag = 100;
+    _favoriteButton.tag = 101;
+    _historyButton.tag = 102;
+    _shareButton.tag = 103;
+    _offlineDownloadButton.tag = 104;
+    _settingsButton.tag = 105;
+    
+    [_portraitButton mas_makeConstraints:^(MASConstraintMaker *make){
+        make.center.equalTo(self.view);
+        make.size.mas_equalTo(0.32 * self.view.frame.size.width);
+    }];
+    [_feedbackButton mas_makeConstraints:^(MASConstraintMaker *make){
+        // X中心 = cos(º / 180 * π)           Y中心 = sin(º / 180 * π)
+        make.centerX.equalTo(_portraitButton.mas_centerX).offset( _offsetFactor *cos(42/180.0 * M_PI));
+        make.centerY.equalTo(_portraitButton.mas_centerY).offset(- _offsetFactor *sin(42/180.0 * M_PI));
+        make.size.mas_equalTo(0.22 * self.view.frame.size.width);
+    }];
+    [_favoriteButton mas_makeConstraints:^(MASConstraintMaker *make){
+        make.centerX.equalTo(_portraitButton.mas_centerX).offset(_offsetFactor * cos(95/180.0 * M_PI));
+        make.centerY.equalTo(_portraitButton.mas_centerY).offset(- _offsetFactor * sin(95/180.0 * M_PI));
+        make.size.mas_equalTo(0.24 * self.view.frame.size.width);
+    }];
+    [_historyButton mas_makeConstraints:^(MASConstraintMaker *make){
+        make.centerX.equalTo(_portraitButton.mas_centerX).offset( _offsetFactor *cos(155/180.0 *M_PI));
+        make.centerY.equalTo(_portraitButton.mas_centerY).offset(- _offsetFactor *sin(155/180.0 *M_PI));
+        make.size.mas_equalTo(0.26 * self.view.frame.size.width);
+    }];
+        // 正玄定理~ X.X
+    [_shareButton mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.equalTo(_portraitButton.mas_centerX).offset( _offsetFactor *sin((-55) / 180.0 *M_PI));
+        make.centerY.equalTo(_portraitButton.mas_centerY).offset( _offsetFactor *cos((55) / 180.0 * M_PI));
+        make.size.mas_equalTo(0.22 * self.view.frame.size.width);
+    }];
+    [_offlineDownloadButton mas_makeConstraints:^(MASConstraintMaker *make){
+        make.centerX.equalTo(_portraitButton.mas_centerX).offset(_offsetFactor *sin((5) / 180.0 *M_PI));
+        make.centerY.equalTo(_portraitButton.mas_centerY).offset( _offsetFactor *cos((-5) / 180.0 * M_PI));
+        make.size.mas_equalTo(0.24 *self.view.frame.size.width);
+    }];
+    [_settingsButton mas_makeConstraints:^(MASConstraintMaker *make){
+        make.centerX.equalTo(_portraitButton.mas_centerX).offset(_offsetFactor *sin((74) / 180.0 *M_PI));
+        make.centerY.equalTo(_portraitButton.mas_centerY).offset( _offsetFactor *cos((-74) / 180.0 * M_PI));
+        make.size.mas_equalTo(0.26 *self.view.frame.size.width);
+    }];
+    
+    [_feedbackButton addTarget:self action:@selector(buttonTouchDown:) forControlEvents:UIControlEventTouchDown];
+    [_favoriteButton addTarget:self action:@selector(buttonTouchDown:) forControlEvents:UIControlEventTouchDown];
+    [_historyButton addTarget:self action:@selector(buttonTouchDown:) forControlEvents:UIControlEventTouchDown];
+    [_shareButton addTarget:self action:@selector(buttonTouchDown:) forControlEvents:UIControlEventTouchDown];
+    [_offlineDownloadButton addTarget:self action:@selector(buttonTouchDown:) forControlEvents:UIControlEventTouchDown];
+    [_settingsButton addTarget:self action:@selector(buttonTouchDown:) forControlEvents:UIControlEventTouchDown];
+    
+    [_feedbackButton addTarget:self action:@selector(buttonTouchUp:) forControlEvents:UIControlEventTouchUpInside|UIControlEventTouchUpOutside];
+    [_favoriteButton addTarget:self action:@selector(buttonTouchUp:) forControlEvents:UIControlEventTouchUpInside|UIControlEventTouchUpOutside];
+    [_historyButton addTarget:self action:@selector(buttonTouchUp:) forControlEvents:UIControlEventTouchUpInside|UIControlEventTouchUpOutside];
+    [_shareButton addTarget:self action:@selector(buttonTouchUp:) forControlEvents:UIControlEventTouchUpInside|UIControlEventTouchUpOutside];
+    [_offlineDownloadButton addTarget:self action:@selector(buttonTouchUp:) forControlEvents:UIControlEventTouchUpInside|UIControlEventTouchUpOutside];
+    [_settingsButton addTarget:self action:@selector(buttonTouchUp:) forControlEvents:UIControlEventTouchUpInside|UIControlEventTouchUpOutside];
+}
+
+-(void)viewDidAppear:(BOOL)animated{
+    
+    // 添加按钮标文
+    if (!_portraitLabel) {
+        _portraitLabel = [UILabel new];
+        _portraitLabel.textAlignment = NSTextAlignmentCenter;
+        _portraitLabel.text = @"点击登录";
+        _portraitLabel.textColor = [UIColor whiteColor];
+        _portraitLabel.backgroundColor = [UIColor colorWithRed:0.0 green:0.502 blue:1.0 alpha:0.6];
+        
+        [_portraitButton addSubview:_portraitLabel];
+        [_portraitLabel mas_makeConstraints:^(MASConstraintMaker *make){
+            make.bottom.equalTo(_portraitButton).offset(-5);
+            make.centerX.equalTo(_portraitButton);
+            make.width.equalTo(_portraitButton);
+            make.height.mas_equalTo(_portraitButton.frame.size.height *0.2);
+        }];
+    }
+    
+    [_settingsButton setImage:[AlphaIcons imageOfSettingsWithFrame:CGRectMake(0, 0, CGRectGetWidth(_settingsButton.frame), CGRectGetHeight(_settingsButton.frame))] forState:UIControlStateNormal];
+    [_offlineDownloadButton setImage:[AlphaIcons imageOfOfflineDownloadWithFrame:CGRectMake(0, 0, CGRectGetWidth(_offlineDownloadButton.frame), CGRectGetHeight(_offlineDownloadButton.frame))] forState:UIControlStateNormal];
+    [_shareButton setImage:[AlphaIcons imageOfShareWithFrame:CGRectMake(0, 0, CGRectGetWidth(_shareButton.frame), CGRectGetWidth(_shareButton.frame))] forState:UIControlStateNormal];
+    [_historyButton setImage:[AlphaIcons imageOfHistoryWithFrame:CGRectMake(0, 0, CGRectGetWidth(_historyButton.frame), CGRectGetHeight(_historyButton.frame))] forState:UIControlStateNormal];
+    [_favoriteButton setImage:[AlphaIcons imageOfFavoriteWithFrame:CGRectMake(0, 0, CGRectGetWidth(_favoriteButton.frame), CGRectGetHeight(_favoriteButton.frame))] forState:UIControlStateNormal];
+    [_feedbackButton setImage:[AlphaIcons imageOfFeedBackWithFrame:CGRectMake(0, 0, CGRectGetWidth(_feedbackButton.frame), CGRectGetHeight(_feedbackButton.frame))] forState:UIControlStateNormal];
+}
+
+- (void)buttonTouchDown:(UIButton *)sender{
+    
+    switch (sender.tag) {
+        case 100:
+            [self bouceWithButton:sender Size:0.22 ActionType:ButtonTouchDown];
+            break;
+            
+        case 101:
+            [self bouceWithButton:sender Size:0.24 ActionType:ButtonTouchDown];
+            break;
+            
+        case 102:
+            [self bouceWithButton:sender Size:0.26 ActionType:ButtonTouchDown];
+            break;
+            
+        case 103:
+            [self bouceWithButton:sender Size:0.22 ActionType:ButtonTouchDown];
+            break;
+            
+        case 104:
+            [self bouceWithButton:sender Size:0.24 ActionType:ButtonTouchDown];
+            break;
+            
+        case 105:
+            [self bouceWithButton:sender Size:0.26 ActionType:ButtonTouchDown];
+            if (!_settingsWasShown) {
+                // 创建夜间模式按钮
+                _nightModeButton = [UIButton buttonWithType:UIButtonTypeCustom];
+                _nightModeButton.frame = _settingsButton.frame;
+                [self.view addSubview:_nightModeButton];
+                [_nightModeButton setImage:[AlphaIcons imageOfNightModeWithFrame:CGRectMake(0, 0, CGRectGetWidth(_nightModeButton.frame), CGRectGetHeight(_nightModeButton.frame))] forState:UIControlStateNormal];
+                _nightModeButton.alpha = 0.1;
+                
+                // 创建主题颜色按钮
+                _themeColorButton = [UIButton buttonWithType:UIButtonTypeCustom];
+                _themeColorButton.frame =  _settingsButton.frame;
+                [self.view addSubview:_themeColorButton];
+                [_themeColorButton setImage:[AlphaIcons imageOfThemeColorWithFrame:CGRectMake(0, 0, CGRectGetWidth(_themeColorButton.frame), CGRectGetHeight(_themeColorButton.frame))] forState:UIControlStateNormal];
+                _themeColorButton.alpha = 0.1;
+                
+                // 创建清理缓存按钮
+                _cleanCacheButton = [UIButton buttonWithType:UIButtonTypeCustom];
+                _cleanCacheButton.frame = _settingsButton.frame;
+                [self.view addSubview:_cleanCacheButton];
+                [_cleanCacheButton setTitle:[NSString stringWithFormat:@"清理缓存: %.1fM",_cacheCount] forState:UIControlStateNormal];
+                [_cleanCacheButton setTitleColor:[UIColor colorWithRed:0.349 green:0.349 blue:0.349 alpha:1.0] forState:UIControlStateNormal];
+                _cleanCacheButton.titleLabel.numberOfLines = 0;
+                _cleanCacheButton.titleLabel.textAlignment = NSTextAlignmentCenter;
+                
+                [_cleanCacheButton setBackgroundImage:[AlphaIcons imageOfCleanCacheWithFrame:CGRectMake(0, 0, CGRectGetWidth(_cleanCacheButton.frame), CGRectGetHeight(_cleanCacheButton.frame)) fraction:_cacheCount / 195 scale:1.35] forState:UIControlStateNormal];
+                _cleanCacheButton.alpha = 0.1;
+                
+                [UIView animateWithDuration:0.3 delay:0.1 options:UIViewAnimationOptionAllowUserInteraction animations:^{
+                    [_nightModeButton mas_makeConstraints:^(MASConstraintMaker *make){
+                        make.right.equalTo(self.view.mas_right).offset(-10 / 375.0 * self.view.frame.size.width);
+                        make.top.equalTo(_settingsButton.mas_bottom);
+                        make.size.mas_equalTo(_settingsButton.frame.size.width * 0.9);
+                    }];
+                    _nightModeButton.alpha = 1.0;
+                    [self.view layoutIfNeeded];
+                } completion:nil];
+                [UIView animateWithDuration:0.3 animations:^{
+                    [_themeColorButton mas_makeConstraints:^(MASConstraintMaker *make){
+                        make.right.equalTo(_nightModeButton.mas_left).offset(15 / 375.0 * self.view.frame.size.width);
+                        make.top.equalTo(_nightModeButton.mas_bottom).offset(-10 / 375.0 * self.view.frame.size.width);
+                        make.size.mas_equalTo(_settingsButton.frame.size.width * 0.9);
+                    }];
+                    _themeColorButton.alpha = 1.0;
+                    
+                    [self.view layoutIfNeeded];
+                }];
+                [UIView animateWithDuration:0.3 delay:0.05 options:UIViewAnimationOptionAllowUserInteraction animations:^{
+                    [_cleanCacheButton mas_makeConstraints:^(MASConstraintMaker *make){
+                        make.bottom.equalTo(_feedbackButton.mas_top).offset(-10 / 375.0 *self.view.frame.size.width);
+                        make.right.equalTo(self.view).offset(-10 / 375.0 *self.view.frame.size.width);
+                        make.size.mas_equalTo(_settingsButton.frame.size.width * 0.9);
+                    }];
+                    _cleanCacheButton.alpha = 1.0;
+                    [self.view layoutIfNeeded];
+                } completion:nil];
+                _settingsWasShown = YES;
+            }else{
+                [UIView animateWithDuration:0.3 animations:^{
+                    print(@"%f",_settingsButton.frame.size.width);
+                    [_nightModeButton mas_remakeConstraints:^(MASConstraintMaker *make){
+                        make.center.equalTo(_settingsButton);
+                        make.size.equalTo(_settingsButton);
+                    }];
+                    [_themeColorButton mas_remakeConstraints:^(MASConstraintMaker *make){
+                        make.center.equalTo(_settingsButton);
+                        make.size.equalTo(_settingsButton);
+                    }];
+                    [_cleanCacheButton mas_remakeConstraints:^(MASConstraintMaker *make){
+                        make.center.equalTo(_settingsButton);
+                        make.size.equalTo(_settingsButton);
+                    }];
+                    _nightModeButton.alpha = 0.1;
+                    _themeColorButton.alpha = 0.1;
+                    _cleanCacheButton.alpha = 0.1;
+                    [self.view layoutIfNeeded];
+                }completion:^(BOOL finished) {
+                    [_nightModeButton removeFromSuperview];
+                    [_themeColorButton removeFromSuperview];
+                    [_cleanCacheButton removeFromSuperview];
+                    _nightModeButton = nil;
+                    _themeColorButton = nil;
+                    _cleanCacheButton = nil;
+                }];
+
+                _settingsWasShown = NO;
+            }
+            
+            
+            break;
+    }
+}
+
+- (void)buttonTouchUp:(UIButton *)sender{
+    switch (sender.tag) {
+        case 100:
+            print(@"反馈");
+            [self bouceWithButton:sender Size:0.22 ActionType:ButtonTouchUp];
+            break;
+            
+        case 101:
+            print(@"收藏");
+            [self bouceWithButton:sender Size:0.24 ActionType:ButtonTouchUp];
+            break;
+            
+        case 102:
+            print(@"历史");
+            [self bouceWithButton:sender Size:0.26 ActionType:ButtonTouchUp];
+            break;
+            
+        case 103:
+            print(@"分享");
+            [self bouceWithButton:sender Size:0.22 ActionType:ButtonTouchUp];
+            break;
+            
+        case 104:
+            print(@"下载");
+            [self bouceWithButton:sender Size:0.24 ActionType:ButtonTouchUp];
+            break;
+            
+        case 105:
+            [self bouceWithButton:sender Size:0.26 ActionType:ButtonTouchUp];
+            print(@"设置");
+            break;
+    }
+}
+
+- (void)bouceWithButton:(UIButton *)sender Size:(CGFloat)size ActionType:(NSUInteger)actionType{
+    
+    if (actionType == ButtonTouchDown) {
+        [UIView animateWithDuration:0.03 animations:^{
+            [sender mas_updateConstraints:^(MASConstraintMaker *make){
+                make.size.mas_equalTo((size-0.02) *self.view.frame.size.width);
+            }];
+            [self.view layoutIfNeeded];
+        }];
+    }
+    if (actionType == ButtonTouchUp){
+        [UIView animateWithDuration:0.04 animations:^{
+            [sender mas_updateConstraints:^(MASConstraintMaker *make){
+                make.size.mas_equalTo((size+0.02) *self.view.frame.size.width);
+            }];
+            [self.view layoutIfNeeded];
+        }];
+    }
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

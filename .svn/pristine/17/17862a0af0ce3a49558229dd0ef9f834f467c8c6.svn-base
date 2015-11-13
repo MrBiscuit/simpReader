@@ -1,0 +1,24 @@
+//
+//  UIButton+ButtonFactory.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 10/22/15.
+//  Copyright © 2015 com.sunshuaiqi. All rights reserved.
+//
+
+#import "UIButton+ButtonFactory.h"
+
+@implementation UIButton (ButtonFactory)
+
++ (UIButton *)roundButtonWithTitle:(NSString *)title Color:(UIColor *)backgroundColor CornerRadius:(CGFloat)cornerRadius AddToView:(UIView *)view{
+    
+    UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
+    [button setTitle:title forState:UIControlStateNormal];
+    button.backgroundColor = backgroundColor;
+    button.titleLabel.textColor = [UIColor whiteColor];
+    button.layer.cornerRadius = cornerRadius *view.frame.size.width / 2;
+    button.clipsToBounds = YES;
+    [view addSubview:button];
+    return button;
+}
+@end

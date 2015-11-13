@@ -1,0 +1,586 @@
+//
+//  ProfileViewControllerModernized.m
+//  ProjectAlpha
+//
+//  Created by lanou3g on 11/5/15.
+//  Copyright © 2015 com.sunshuaiqi. All rights reserved.
+//
+
+#import "ProfileViewControllerModernized.h"
+#import "UIButton+ButtonFactory.h"
+#import "UILabel+LabelFactory.h"
+#import "HistoryViewController.h"
+#import "ProjectAlpha-Swift.h"
+#import "SevenSwitch.h"
+#import <LeanCloudFeedback/LeanCloudFeedback.h>
+#import "DataHandle.h"
+#import "ProfileViewController.h"
+
+@interface ProfileViewControllerModernized ()<UIScrollViewDelegate>
+
+#pragma mark 视图
+@property(nonatomic, strong) UIScrollView *scrollView;
+
+#pragma mark UI控件属性
+@property(nonatomic, strong) UIButton *NPFavoriteButton;
+@property(nonatomic, strong) UIButton *NPHistoryButton;
+@property(nonatomic, strong) UIButton *NPOfflineDownloadButton;
+@property(nonatomic, strong) UIButton *NPFeedbackButton;
+@property(nonatomic, strong) UIButton *NPSettingsButton;
+@property(nonatomic, strong) UIButton *NPRBButton;
+@property(nonatomic, strong) UIButton *NPShareButton;
+@property(nonatomic, strong) UIButton *NPNightModeButton;
+@property(nonatomic, strong) UIButton *NPThemeColorButton;
+@property(nonatomic, strong) UIButton *NPClearCacheButton;
+@property(nonatomic, strong) UIColor *NPTextColor;
+@property(nonatomic, strong) UIColor *NPTintColor;
+@property(nonatomic, strong) UIColor *NPInnerTintColor;
+@property(nonatomic, strong) UILabel *NPFavoriteButtonLabel;
+@property(nonatomic, strong) UILabel *NPFeedbackLabel;
+@property(nonatomic, strong) UILabel *NPOfflineDownloadLabel;
+@property(nonatomic, strong) UILabel *NPHistoryLabel;
+@property(nonatomic, strong) UILabel *NPSettingsButtonLabel;
+@property(nonatomic, strong) UILabel *NPShareButtonLabel;
+@property(nonatomic, strong) UILabel *NPRBButtonLabel;
+@property(nonatomic, strong) UILabel *NPNightModeButtonLabel;
+@property(nonatomic, strong) UILabel *NPThemeColorButtonLabel;
+@property(nonatomic, strong) UILabel *NPClearCacheButtonLabel;
+@property(nonatomic, strong) UIView *NPPortraitLabelDeck;
+@property(nonatomic, strong) UIImageView *NPFavoriteButtonImage;
+@property(nonatomic, strong) SevenSwitch *nightModeSwitch;
+
+#pragma mark 参数
+@property(nonatomic, assign) BOOL settingsIsShowing;
+@property(nonatomic, assign) CGFloat settingsAccumulatedHeight;
+@property(nonatomic, assign) CGFloat currentHeight;
+@property(nonatomic, strong) UIColor *tabbarColor;
+@end
+
+@implementation ProfileViewControllerModernized
+
+-(void)viewDidLoad{
+    
+    UIImageView *imageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"bg"]];
+    imageView.frame = self.view.frame;
+    [self.view addSubview:imageView];
+    
+    _scrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(0, 64, CGRectGetWidth(self.view.frame), CGRectGetHeight(self.view.frame) - 64)];
+    _scrollView.contentSize = CGSizeMake(CGRectGetWidth(self.view.frame), CGRectGetHeight(self.view.frame) - 64 );
+    [self.view addSubview:_scrollView];
+    
+    _scrollView.delegate = self;
+    
+    if ([userDefaults boolForKey:@"isNightMode"]){ // 判断如果当前为夜间模式
+        _NPTintColor = [UIColor colorWithRed:0.251 green:0.251 blue:0.251 alpha:1.0];
+        _NPInnerTintColor = [UIColor colorWithRed:0.3309 green:0.3309 blue:0.3309 alpha:1.0];
+    }else{ // 如果不是夜间模式
+        if ([userDefaults colorForKey:@"dark"]){
+            _NPTintColor = [userDefaults colorForKey:@"dark"];
+            _NPInnerTintColor = [userDefaults colorForKey:@"normal"];
+            self.tabbarColor = [userDefaults colorForKey:@"TabBarTintColor"];
+        }else{
+            _NPTintColor = [UIColor colorWithRed:0 green:0.6863 blue:0.9412 alpha:1];
+            _NPInnerTintColor = [UIColor colorWithRed:0.2189 green:0.7167 blue:0.9251 alpha:1.0];
+        }
+    }
+   _NPTextColor = [UIColor whiteColor];
+    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithImage:[AlphaIcons imageOfBackArrowWithFrame:CGRectMake(0, 0, 40, 40)] style:UIBarButtonItemStylePlain target:self action:@selector(backAction)];
+    self.navigationItem.leftBarButtonItem.tintColor = [UIColor whiteColor];
+    self.navigationController.navigationBar.barTintColor = _NPTintColor;
+    [self nextPageLayout];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(themeColorUpdate:) name:@"themeColorUpdate" object:nil];
+}
+
+- (void)nextPageLayout{
+    _NPFavoriteButton = [UIButton modernSqureButtonOnView:_scrollView];
+    _NPFeedbackButton = [UIButton modernSqureButtonOnView:_scrollView];
+    _NPOfflineDownloadButton = [UIButton modernSqureButtonOnView:_scrollView];
+    _NPHistoryButton = [UIButton modernSqureButtonOnView:_scrollView];
+
+    _NPClearCacheButton = [UIButton modernRectangleButtonOnView:_scrollView withBackgroundColor:_NPInnerTintColor];
+    _NPThemeColorButton = [UIButton modernRectangleButtonOnView:_scrollView withBackgroundColor:_NPInnerTintColor];
+    _NPNightModeButton = [UIButton modernRectangleButtonOnView:_scrollView withBackgroundColor:_NPInnerTintColor];
+    
+    _NPSettingsButton = [UIButton modernRectangleButtonOnView:_scrollView withBackgroundColor:_NPTintColor];
+    _NPRBButton = [UIButton modernRectangleButtonOnView:_scrollView withBackgroundColor:_NPTintColor];
+    _NPShareButton = [UIButton modernRectangleButtonOnView:_scrollView withBackgroundColor:_NPTintColor];
+    
+    _NPFeedbackButton.tag = 200;
+    _NPFavoriteButton.tag = 201;
+    _NPHistoryButton.tag = 202;
+    _NPOfflineDownloadButton.tag = 204;
+    _NPSettingsButton.tag = 205;
+    _NPThemeColorButton.tag = 206;
+    _NPClearCacheButton.tag = 207;
+    
+    [_NPFavoriteButton addTarget:self action:@selector(buttonTouchUp:) forControlEvents:UIControlEventTouchUpInside];
+    [_NPFeedbackButton addTarget:self action:@selector(buttonTouchUp:) forControlEvents:UIControlEventTouchUpInside];
+    [_NPOfflineDownloadButton addTarget:self action:@selector(buttonTouchUp:) forControlEvents:UIControlEventTouchUpInside];
+    [_NPHistoryButton addTarget:self action:@selector(buttonTouchUp:) forControlEvents:UIControlEventTouchUpInside];
+    [_NPSettingsButton addTarget:self action:@selector(buttonTouchUp:) forControlEvents:UIControlEventTouchUpInside];
+    [_NPThemeColorButton addTarget:self action:@selector(buttonTouchUp:) forControlEvents:UIControlEventTouchUpInside];
+    [_NPClearCacheButton addTarget:self action:@selector(buttonTouchUp:) forControlEvents:UIControlEventTouchUpInside];
+    
+    
+    CGFloat squreButtonSize = self.view.frame.size.width / 2;
+    
+    [_NPFavoriteButton mas_remakeConstraints:^(MASConstraintMaker *make){
+        make.left.equalTo(self.view);
+        make.top.mas_equalTo(_scrollView);
+        make.size.mas_equalTo(squreButtonSize);
+    }];
+    [_NPFeedbackButton mas_remakeConstraints:^(MASConstraintMaker *make){
+        make.top.equalTo(_NPFavoriteButton);
+        make.left.equalTo(_NPFavoriteButton.mas_right);
+        make.size.equalTo(_NPFavoriteButton);
+    }];
+    
+    [_NPOfflineDownloadButton mas_remakeConstraints:^(MASConstraintMaker *make){
+        make.top.equalTo(_NPFavoriteButton.mas_bottom);
+        make.size.and.left.equalTo(_NPFavoriteButton);
+    }];
+    [_NPHistoryButton mas_remakeConstraints:^(MASConstraintMaker *make){
+        make.top.equalTo(_NPFeedbackButton.mas_bottom);
+        make.size.equalTo(_NPFavoriteButton);
+        make.left.equalTo(_NPOfflineDownloadButton.mas_right);
+    }];
+    
+    [_NPSettingsButton mas_remakeConstraints:^(MASConstraintMaker *make){
+        make.top.equalTo(_NPOfflineDownloadButton.mas_bottom).offset(2);
+        make.left.and.right.equalTo(self.view);
+        make.height.mas_equalTo(_NPFavoriteButton.mas_height).multipliedBy((112/187.5));
+    }];
+    [_NPNightModeButton mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.view).offset(5 / 375.0 * ScreenWidth);
+        make.right.equalTo(self.view).offset(-5 / 375.0 * ScreenWidth);
+        make.bottom.equalTo(_NPSettingsButton.mas_bottom);
+        make.height.mas_equalTo(_NPSettingsButton).multipliedBy(0.5);
+    }];
+    [_NPThemeColorButton mas_makeConstraints:^(MASConstraintMaker *make){
+        make.center.equalTo(_NPNightModeButton);
+        make.size.equalTo(_NPNightModeButton);
+    }];
+    [_NPClearCacheButton mas_makeConstraints:^(MASConstraintMaker *make){
+        make.center.equalTo(_NPNightModeButton);
+        make.size.equalTo(_NPNightModeButton);
+    }];
+    [_NPShareButton mas_remakeConstraints:^(MASConstraintMaker *make){
+        make.top.equalTo(_NPClearCacheButton.mas_bottom).offset(2);
+        make.left.equalTo(self.view);
+        make.right.equalTo(_NPRBButton.mas_left).offset(-2);
+        make.height.equalTo(_NPSettingsButton);
+    }];
+    [_NPRBButton mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(_NPShareButton);
+        make.left.equalTo(_NPShareButton.mas_right).offset(2);
+        make.right.equalTo(self.view);
+        make.height.equalTo(_NPSettingsButton);
+        make.width.equalTo(_NPShareButton);
+    }];
+    
+    UIView *verticalLine1 = [UIView new];
+    CGFloat lineOffset = -self.view.frame.size.width/4.0;
+    verticalLine1.backgroundColor = [UIColor darkGrayColor];
+    [_scrollView addSubview:verticalLine1];
+    [verticalLine1 mas_remakeConstraints:^(MASConstraintMaker *make){
+        make.left.equalTo(_NPFavoriteButton.mas_right).offset(-0.5);
+        make.height.mas_equalTo(_NPFavoriteButton).offset(lineOffset);
+        make.width.mas_equalTo(1);
+        make.centerY.equalTo(_NPFavoriteButton);
+    }];
+    
+    UIView *verticalLine2 = [UIView new];
+    verticalLine2.backgroundColor = [UIColor darkGrayColor];
+    [_scrollView addSubview:verticalLine2];
+    [verticalLine2 mas_remakeConstraints:^(MASConstraintMaker *make){
+        make.left.equalTo(_NPFavoriteButton.mas_right).offset(-0.5);
+        make.height.mas_equalTo(_NPFavoriteButton).offset(lineOffset);
+        make.width.mas_equalTo(1);
+        make.centerY.equalTo(_NPOfflineDownloadButton);
+    }];
+    
+    UIView *horizontalLine1 = [UIView new];
+    horizontalLine1.backgroundColor = [UIColor darkGrayColor];
+    [_scrollView addSubview:horizontalLine1];
+    [horizontalLine1 mas_remakeConstraints:^(MASConstraintMaker *make){
+        make.top.equalTo(_NPFavoriteButton.mas_bottom).offset(-0.5);
+        make.width.mas_equalTo(_NPFavoriteButton).offset(lineOffset);
+        make.height.mas_equalTo(1);
+        make.centerX.equalTo(_NPFavoriteButton);
+    }];
+    
+    UIView *horizontalLine2 = [UIView new];
+    horizontalLine2.backgroundColor = [UIColor darkGrayColor];
+    [_scrollView addSubview:horizontalLine2];
+    [horizontalLine2 mas_remakeConstraints:^(MASConstraintMaker *make){
+        make.top.equalTo(_NPFeedbackButton.mas_bottom).offset(-0.5);
+        make.width.mas_equalTo(_NPFavoriteButton).offset(lineOffset);
+        make.height.mas_equalTo(1);
+        make.centerX.equalTo(_NPFeedbackButton);
+    }];
+    
+#pragma mark Next Page Button Label Setup
+    _NPFavoriteButtonLabel = [UILabel modernLabelWithTitle:@"我的收藏" Color:_NPTextColor OnView:_NPFavoriteButton];
+    _NPFeedbackLabel = [UILabel modernLabelWithTitle:@"反    馈" Color:_NPTextColor OnView:_NPFeedbackButton];
+    _NPOfflineDownloadLabel = [UILabel modernLabelLowerPlateWithTitle:@"离线下载" Color:_NPTextColor OnView:_NPOfflineDownloadButton];
+    _NPHistoryLabel = [UILabel modernLabelLowerPlateWithTitle:@"最近浏览" Color:_NPTextColor OnView:_NPHistoryButton];
+    _NPSettingsButtonLabel = [UILabel modernFacilitateLabelWithTitle:@"设    置" Color:_NPTextColor OnView:_NPSettingsButton Centered:YES];
+    _NPShareButtonLabel = [UILabel modernFacilitateLabelWithTitle:@"分    享" Color:_NPTextColor OnView:_NPShareButton Centered:YES];
+    _NPRBButtonLabel = [UILabel modernFacilitateLabelWithTitle:@"右下角" Color:_NPTextColor OnView:_NPRBButton Centered:YES];
+    
+    _NPNightModeButtonLabel = [UILabel modernFacilitateLabelWithTitle:@"夜间模式" Color:_NPTextColor OnView:_NPNightModeButton Centered:NO];
+    _NPThemeColorButtonLabel = [UILabel modernFacilitateLabelWithTitle:@"主题颜色" Color:_NPTextColor OnView:_NPThemeColorButton Centered:NO];
+    _NPClearCacheButtonLabel = [UILabel modernFacilitateLabelWithTitle:@"清理缓存" Color:_NPTextColor OnView:_NPClearCacheButton Centered:NO];
+    
+    [_NPNightModeButtonLabel mas_makeConstraints:^(MASConstraintMaker *make){
+        make.left.equalTo(_NPNightModeButton).offset(20);
+        make.right.equalTo(_NPNightModeButton).offset(-20);
+        make.height.mas_equalTo(30);
+        make.centerY.width.equalTo(_NPNightModeButton);
+    }];
+    [_NPThemeColorButtonLabel mas_makeConstraints:^(MASConstraintMaker *make){
+        make.left.equalTo(_NPThemeColorButton).offset(20);
+        make.right.equalTo(_NPThemeColorButton).offset(-20);
+        make.height.mas_equalTo(30);
+        make.centerY.width.equalTo(_NPThemeColorButton);
+    }];
+    [_NPClearCacheButtonLabel mas_makeConstraints:^(MASConstraintMaker *make){
+        make.left.equalTo(_NPClearCacheButton).offset(20);
+        make.right.equalTo(_NPClearCacheButton).offset(-20);
+        make.height.mas_equalTo(30);
+        make.centerY.width.equalTo(_NPClearCacheButton);
+    }];
+    [_NPSettingsButtonLabel mas_makeConstraints:^(MASConstraintMaker *make){
+        make.centerX.equalTo(_NPSettingsButton.mas_centerX);
+        make.bottom.equalTo(_NPSettingsButton.mas_bottom);
+        make.width.mas_equalTo(100 / 375.0 * ScreenWidth);
+        make.height.mas_equalTo(30 / 667.0 * ScreenHeight);
+    }];
+    [_NPShareButtonLabel mas_makeConstraints:^(MASConstraintMaker *make){
+        make.centerX.equalTo(_NPShareButton.mas_centerX);
+        make.bottom.equalTo(_NPShareButton.mas_bottom);
+        make.width.mas_equalTo(80 / 375.0 * ScreenWidth);
+        make.height.mas_equalTo(30 / 667.0 * ScreenHeight);
+    }];
+    [_NPRBButtonLabel mas_makeConstraints:^(MASConstraintMaker *make){
+        make.centerX.equalTo(_NPRBButton.mas_centerX);
+        make.bottom.equalTo(_NPRBButton.mas_bottom);
+        make.width.mas_equalTo(80 / 375.0 * ScreenWidth);
+        make.height.mas_equalTo(30 / 667.0 * ScreenHeight);
+    }];
+    
+    #pragma mark SubButtonLayout
+    [self nightmodeSwitchSetup];
+    [self themeColorButtonsSetup];
+    [self cacheCountButtonSetup];
+}
+
+- (void)nightmodeSwitchSetup{
+    _nightModeSwitch = [[SevenSwitch alloc] initWithFrame:CGRectMake(200, 200, 60, 31)];
+    [_NPNightModeButton addSubview:_nightModeSwitch];
+    [_nightModeSwitch addTarget:self action:@selector(nightModeSwitchChanged:) forControlEvents:UIControlEventValueChanged];
+    _nightModeSwitch.offImage = [AlphaIcons imageOfDayWithFrame:CGRectMake(0, 0, _nightModeSwitch.frame.size.height, _nightModeSwitch.frame.size.height)];
+    _nightModeSwitch.onImage = [AlphaIcons imageOfNightWithFrame:CGRectMake(0, 0, _nightModeSwitch.frame.size.height, _nightModeSwitch.frame.size.height)];
+    _nightModeSwitch.onColor = [UIColor colorWithRed:0.1961 green:0.5882 blue:0.2745 alpha:1.0];
+    _nightModeSwitch.inactiveColor = [UIColor colorWithRed:1.0 green:0.7725 blue:0.3255 alpha:1.0];
+    _nightModeSwitch.borderColor = [UIColor clearColor];
+    [_nightModeSwitch mas_remakeConstraints:^(MASConstraintMaker *make){
+        make.centerY.equalTo(_NPNightModeButton);
+        make.width.mas_equalTo(60 / 375.0 * ScreenWidth);
+        make.height.mas_equalTo(31 / 667.0 * ScreenHeight);
+        make.right.equalTo(_NPNightModeButton).mas_offset(-10 / 375.0 * ScreenWidth);
+    }];
+    if ([userDefaults boolForKey:@"isNightMode"]) {
+        [_nightModeSwitch setOn:YES];
+    }
+}
+
+-(void)themeColorButtonsSetup{
+    UIButton *pink = [UIButton modernColorButtonWithColor:[UIColor colorWithRed:0.9137 green:0.3255 blue:0.5137 alpha:1.0] PlacedAtSpot:0 addToView:_NPThemeColorButton];
+    [pink addTarget:self action:@selector(colorPickerDidFinishPickingColor:) forControlEvents:UIControlEventTouchUpInside];
+    
+    UIButton *lightBlue = [UIButton modernColorButtonWithColor:[UIColor colorWithRed:0.4314 green:0.7608 blue:0.9333 alpha:1.0] PlacedAtSpot:1 addToView:_NPThemeColorButton];
+    [lightBlue addTarget:self action:@selector(colorPickerDidFinishPickingColor:) forControlEvents:UIControlEventTouchUpInside];
+    
+    UIButton *blue = [UIButton modernColorButtonWithColor:[UIColor colorWithRed:0 green:0.6863 blue:0.9412 alpha:1] PlacedAtSpot:2 addToView:_NPThemeColorButton];
+    [blue addTarget:self action:@selector(colorPickerDidFinishPickingColor:) forControlEvents:UIControlEventTouchUpInside];
+    
+    UIButton *purple = [UIButton modernColorButtonWithColor:[UIColor colorWithRed:0.4863 green:0.3137 blue:0.6157 alpha:1.0] PlacedAtSpot:3 addToView:_NPThemeColorButton];
+    [purple addTarget:self action:@selector(colorPickerDidFinishPickingColor:) forControlEvents:UIControlEventTouchUpInside];
+    
+    UIButton  *brown = [UIButton modernColorButtonWithColor:[UIColor colorWithRed:0.6196 green:0.3098 blue:0.1176 alpha:1.0] PlacedAtSpot:4 addToView:_NPThemeColorButton];
+    [brown addTarget:self action:@selector(colorPickerDidFinishPickingColor:) forControlEvents:UIControlEventTouchUpInside];
+    
+    UIButton *green = [UIButton modernColorButtonWithColor:[UIColor colorWithRed:0.1912 green:0.4227 blue:0.2569 alpha:1.0] PlacedAtSpot:5 addToView:_NPThemeColorButton];
+    [green addTarget:self action:@selector(colorPickerDidFinishPickingColor:) forControlEvents:UIControlEventTouchUpInside];
+}
+
+- (void)cacheCountButtonSetup{
+    UILabel *cacheCount = [UILabel new];
+    [_NPClearCacheButton addSubview:cacheCount];
+    [cacheCount mas_remakeConstraints:^(MASConstraintMaker *make){
+        make.right.equalTo(_NPClearCacheButton).offset(-10 / 375.0 * ScreenWidth);
+        make.width.mas_equalTo(60);
+        make.centerY.equalTo(_NPClearCacheButton);
+        make.height.equalTo(_NPClearCacheButtonLabel);
+    }];
+    cacheCount.textAlignment = NSTextAlignmentRight;
+    cacheCount.text = [NSString stringWithFormat:@"%.2fM",[DataHandle SharedData].cacheCount];
+    cacheCount.textColor = [UIColor whiteColor];
+}
+
+-(void)viewDidAppear:(BOOL)animated{
+    print(@"at start %f",self.scrollView.contentOffset.y);
+    if (!_NPFavoriteButtonImage) {
+        _NPFavoriteButtonImage = [[UIImageView alloc] initWithImage: [AlphaIcons imageOfFavoriteModernizedWithFrame:_NPFavoriteButton.bounds]];
+        _NPFavoriteButtonImage.tintColor = [UIColor whiteColor];
+        [_NPFavoriteButton addSubview:_NPFavoriteButtonImage];
+        [_NPFavoriteButtonImage mas_remakeConstraints:^(MASConstraintMaker *make){
+            make.top.equalTo(_NPFavoriteButtonLabel.mas_bottom);
+            make.size.mas_equalTo(_NPFavoriteButton.frame.size.width / 2);
+            make.centerX.equalTo(_NPFavoriteButton);
+        }];
+        
+        UIImageView *NPFeedBackButtonImage = [[UIImageView alloc] initWithImage:[AlphaIcons imageOfFeedBackModernizedWithFrame:_NPFeedbackButton.bounds]];
+        NPFeedBackButtonImage.tintColor = [UIColor whiteColor];
+        [_NPFeedbackButton addSubview:NPFeedBackButtonImage];
+        [NPFeedBackButtonImage mas_remakeConstraints:^(MASConstraintMaker *make){
+            make.top.equalTo(_NPFeedbackLabel.mas_bottom);
+            make.size.mas_equalTo(_NPFeedbackButton.frame.size.width / 2);
+            make.centerX.equalTo(_NPFeedbackButton);
+        }];
+        
+        UIImageView *NPOfflineDownloadButtonImage = [[UIImageView alloc] initWithImage:[AlphaIcons imageOfOfflineDownloadModernizedWithFrame:_NPOfflineDownloadButton.bounds]];
+        NPOfflineDownloadButtonImage.tintColor = [UIColor whiteColor];
+        [_NPOfflineDownloadButton addSubview:NPOfflineDownloadButtonImage];
+        [NPOfflineDownloadButtonImage mas_remakeConstraints:^(MASConstraintMaker *make){
+            make.bottom.equalTo(_NPOfflineDownloadLabel.mas_top);
+            make.size.mas_equalTo(_NPOfflineDownloadButton.frame.size.width / 2);
+            make.centerX.equalTo(_NPOfflineDownloadButton);
+        }];
+        
+        UIImageView *NPHistoryButtonImage = [[UIImageView alloc] initWithImage:[AlphaIcons imageOfHistoryModernizedWithFrame:_NPHistoryButton.bounds]];
+        NPHistoryButtonImage.tintColor = [UIColor whiteColor];
+        [_NPHistoryButton addSubview:NPHistoryButtonImage];
+        [NPHistoryButtonImage mas_remakeConstraints:^(MASConstraintMaker *make){
+            make.bottom.equalTo(_NPHistoryLabel.mas_top);
+            make.size.mas_equalTo(_NPHistoryButton.frame.size.width / 2);
+            make.centerX.equalTo(_NPHistoryButton);
+        }];
+        
+        UIImageView *NPSettingsButtonImage = [[UIImageView alloc] initWithImage:[AlphaIcons imageOfSettingsModernizedWithFrame:_NPSettingsButton.bounds]];
+        NPSettingsButtonImage.tintColor = [UIColor whiteColor];
+        [_NPSettingsButton addSubview:NPSettingsButtonImage];
+        [NPSettingsButtonImage mas_remakeConstraints:^(MASConstraintMaker *make){
+            make.centerX.equalTo(_NPSettingsButton);
+            make.centerY.equalTo(_NPSettingsButton).offset(-10);
+            make.size.equalTo(_NPFavoriteButtonImage).offset(-10);
+        }];
+        
+        UIImageView *NPShareButtonImage = [[UIImageView alloc] initWithImage:[AlphaIcons imageOfShareModernizedWithFrame:_NPSettingsButton.bounds]];
+        NPShareButtonImage.tintColor = [UIColor whiteColor];
+        [_NPShareButton addSubview:NPShareButtonImage];
+        [NPShareButtonImage mas_remakeConstraints:^(MASConstraintMaker *make){
+            make.center.equalTo(_NPShareButton);
+            make.size.equalTo(_NPFavoriteButtonImage).offset(-30);
+        }];
+        
+        UIImageView *NPRBButtonImage = [[UIImageView alloc] initWithImage:[AlphaIcons imageOfPortraitModernizedWithFrame:_NPSettingsButton.bounds]];
+        NPRBButtonImage.tintColor = [UIColor whiteColor];
+        [_NPRBButton addSubview:NPRBButtonImage];
+        [NPRBButtonImage mas_remakeConstraints:^(MASConstraintMaker *make){
+            make.center.equalTo(_NPRBButton);
+            make.size.equalTo(_NPFavoriteButtonImage).offset(-30);
+        }];
+    }
+   
+}
+
+- (void)backAction{
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)buttonTouchUp:(UIButton *)sender{
+    switch (sender.tag) {
+        case 200:{
+            LCUserFeedbackAgent *agent = [LCUserFeedbackAgent sharedInstance];
+            [agent showConversations:self title:@"feedback" contact:@"bugreport@appleDev.com"];
+            break;
+        }
+        case 201:
+            print(@"收藏")
+            
+            break;
+            
+        case 202:
+            print(@"历史")
+            [self.navigationController pushViewController:[HistoryViewController new] animated:YES];
+            break;
+            
+        case 204:
+            print(@"下载")
+            break;
+            
+        case 205: // NP设置
+            [self expendNPSettings];
+            break;
+            
+        case 206: // NP主题颜色
+            break;
+            
+        case 207: // NP清理缓存
+            break;
+    }
+}
+
+- (void)colorPickerDidFinishPickingColor:(UIButton *)picked{
+    [userDefaults setValue:@"profileM" forKey:@"caller"];
+    [userDefaults synchronize];
+    [[ProfileViewController new] colorPickerDidFinishPickingColor:picked];
+    
+}
+- (void)expendNPSettings{
+    if (_settingsIsShowing == NO) {
+        _settingsIsShowing = YES;
+        [UIView animateWithDuration:0.3 delay:0 options:UIViewAnimationOptionAllowUserInteraction animations:^{
+            [self adjustScrollViewWithIncrements:@[_NPNightModeButton]];
+            [_NPNightModeButton mas_remakeConstraints:^(MASConstraintMaker *make) {
+                make.top.equalTo(_NPSettingsButton.mas_bottom);
+                make.left.equalTo(self.view).offset(5 / 375.0 * ScreenWidth);
+                make.right.equalTo(self.view).offset(- 5 / 375.0 * ScreenWidth);
+                make.height.mas_equalTo(_NPSettingsButton).multipliedBy(0.5);
+            }];
+            [_scrollView layoutIfNeeded];
+        } completion:nil];
+        [UIView animateWithDuration:0.3 delay:0.1 options:UIViewAnimationOptionAllowUserInteraction animations:^{
+            [self adjustScrollViewWithIncrements:@[_NPNightModeButton,_NPThemeColorButton]];
+            [_NPThemeColorButton mas_remakeConstraints:^(MASConstraintMaker *make){
+                make.top.equalTo(_NPNightModeButton.mas_bottom);
+                make.size.and.centerX.equalTo(_NPNightModeButton);
+            }];
+            [_scrollView layoutIfNeeded];
+        } completion:nil];
+        [UIView animateWithDuration:0.3 delay:0.2 options:UIViewAnimationOptionAllowUserInteraction animations:^{
+             [self adjustScrollViewWithIncrements:@[_NPNightModeButton,_NPThemeColorButton,_NPClearCacheButton]];
+            [_NPClearCacheButton mas_remakeConstraints:^(MASConstraintMaker *make){
+                make.top.equalTo(_NPThemeColorButton.mas_bottom);
+                make.size.and.centerX.equalTo(_NPNightModeButton);
+            }];
+            [_scrollView layoutIfNeeded];
+            
+        } completion:nil];
+        print(@"ultimate: %f",self.scrollView.contentSize.height);
+    }else if (_settingsIsShowing == YES){
+        _settingsIsShowing = NO;
+        [UIView animateWithDuration:0.3 delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
+            [self adjustScrollViewWithIncrements:@[_NPClearCacheButton]];
+            [_NPClearCacheButton mas_remakeConstraints:^(MASConstraintMaker *make){
+                make.bottom.equalTo(_NPSettingsButton);
+                make.left.equalTo(self.view).offset(5 / 375.0 * ScreenWidth);
+                make.right.equalTo(self.view).offset(-5 / 375.0 * ScreenWidth);
+                make.height.equalTo(_NPSettingsButton).dividedBy(2);
+            }];
+            [_scrollView layoutIfNeeded];
+        } completion:nil];
+        [UIView animateWithDuration:0.3 delay:0.1 options:UIViewAnimationOptionCurveEaseInOut animations:^{
+            [self adjustScrollViewWithIncrements:@[_NPClearCacheButton,_NPThemeColorButton]];
+            [_NPThemeColorButton mas_remakeConstraints:^(MASConstraintMaker *make){
+                make.size.equalTo(_NPClearCacheButton);
+                make.center.equalTo(_NPClearCacheButton);
+            }];
+            [_scrollView layoutIfNeeded];
+        } completion:nil];
+        [UIView animateWithDuration:0.3 delay:0.2 options:UIViewAnimationOptionCurveEaseInOut animations:^{
+            [self adjustScrollViewWithIncrements:@[_NPClearCacheButton,_NPThemeColorButton,_NPNightModeButton]];
+            [_NPNightModeButton mas_remakeConstraints:^(MASConstraintMaker *make){
+                make.size.equalTo(_NPClearCacheButton);
+                make.center.equalTo(_NPClearCacheButton);
+            }];
+            [_scrollView layoutIfNeeded];
+        } completion:nil];
+    }
+}
+
+-(void)scrollViewDidScroll:(UIScrollView *)scrollView{
+    print(@"%f", scrollView.contentOffset.y);
+}
+
+- (void)adjustScrollViewWithIncrements:(NSArray *)viewsArray{
+    _settingsAccumulatedHeight = 0.0;
+    for (UIView *view in viewsArray) {
+        _settingsAccumulatedHeight += view.frame.size.height;
+    }
+    if (_settingsIsShowing) {
+        _currentHeight = CGRectGetHeight(self.view.frame)-64 + _settingsAccumulatedHeight;
+        [self.scrollView setContentSize:CGSizeMake(CGRectGetWidth(self.view.frame), _currentHeight)];
+        [self.scrollView setContentOffset:CGPointMake(0,  _settingsAccumulatedHeight)];
+    }else{
+        [self.scrollView setContentSize:CGSizeMake(CGRectGetWidth(self.view.frame), _currentHeight -_settingsAccumulatedHeight)];
+    }
+}
+
+- (void)nightModeSwitchChanged:(SevenSwitch *)sender{
+    if (sender.on) {
+        [self nightTime];
+    }else{
+        [self dayTime];
+    }
+}
+
+- (void)dayTime{
+    
+    // 改变自身颜色
+    if ([userDefaults colorForKey:@"dark"]){
+        _NPTintColor = [userDefaults colorForKey:@"dark"];
+        _NPInnerTintColor = [userDefaults colorForKey:@"normal"];
+    }else{
+        _NPTintColor = [UIColor colorWithRed:0 green:0.6863 blue:0.9412 alpha:1];
+        _NPInnerTintColor = [UIColor colorWithRed:0.2189 green:0.7167 blue:0.9251 alpha:1.0];
+    }
+    [self themeColorUpdate];
+    
+    // 发布通知
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"day" object:nil];
+    
+    // 本地存储
+    [userDefaults setBool:NO forKey:@"isNightMode"];
+}
+
+- (void)nightTime{
+    
+    // 存储当前颜色
+    [userDefaults setColor:[UIApplication sharedApplication].keyWindow.backgroundColor forKey:@"viewBackgroundColor"];
+    [userDefaults setColor:self.navigationController.navigationBar.barTintColor forKey:@"NavigationBarTinColor"];
+    [userDefaults setBool:YES forKey:@"isNightMode"];
+    [userDefaults setColor:self.tabbarColor forKey:@"TabBarTintColor"];
+    [userDefaults synchronize];
+    
+    // 发布通知
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"night" object:nil];
+    
+    // 改变自身颜色
+    _NPTintColor = [UIColor colorWithRed:0.251 green:0.251 blue:0.251 alpha:1.0];
+    _NPInnerTintColor = [UIColor colorWithRed:0.3309 green:0.3309 blue:0.3309 alpha:1.0];
+    [self themeColorUpdate];
+}
+
+- (void)themeColorUpdate{
+    [UIView animateWithDuration:0.3 animations:^{
+        self.navigationController.navigationBar.barTintColor = _NPTintColor;
+        self.tabbarColor = [userDefaults colorForKey:@"TabBarTintColor"];
+        _NPSettingsButton.backgroundColor = _NPTintColor;
+        _NPShareButton.backgroundColor = _NPTintColor;
+        _NPRBButton.backgroundColor = _NPTintColor;
+        _NPNightModeButton.backgroundColor = _NPInnerTintColor;
+        _NPThemeColorButton.backgroundColor = _NPInnerTintColor;
+        _NPClearCacheButton.backgroundColor = _NPInnerTintColor;
+    }];
+}
+
+- (void)themeColorUpdate:(NSNotification *)notification{
+    _NPTintColor = notification.userInfo[@"dark"];
+    _NPInnerTintColor = notification.userInfo[@"normal"];
+    [self themeColorUpdate];
+}
+
+@end

@@ -1,0 +1,19 @@
+//
+//  MoodLogDetailViewController.h
+//  ProjectAlpha
+//
+//  Created by lanou3g on 15/10/27.
+//  Copyright © 2015年 com.sunshuaiqi. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface MoodLogDetailViewController : UIViewController
+
+@property (nonatomic,strong) NSString * content; // 用来接收段落
+
+@property (nonatomic,strong) NSString * imgUrl; // 用来接收图片网址
+
+@property (nonatomic,strong) NSString * ID; // 接收ID 值
+
+@end

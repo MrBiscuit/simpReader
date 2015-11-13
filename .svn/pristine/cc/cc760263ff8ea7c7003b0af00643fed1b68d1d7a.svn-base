@@ -1,0 +1,15 @@
+//
+//  EncouragementDetailViewController.h
+//  ProjectAlpha
+//
+//  Created by lanou3g on 15/10/28.
+//  Copyright © 2015年 com.sunshuaiqi. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface EncouragementDetailViewController : UIViewController
+
+@property (nonatomic,assign) NSInteger  ID;  // 接收上个页面的id值
+
+@end
