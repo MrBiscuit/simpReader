@@ -2,7 +2,7 @@
 //  ViewController.h
 //  sideBar
 //
-//  Created by lanou3g on 10/27/15.
+//  Created by Sunshuaiqi on 10/27/15.
 //  Copyright © 2015 com.sunshuaiqi. All rights reserved.
 //
 
