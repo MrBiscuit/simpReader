@@ -2,7 +2,7 @@
 //  DataHandle.h
 //  ProjectAlpha
 //
-//  Created by lanou3g on 10/30/15.
+//  Created by Sunshuaiqi on 10/30/15.
 //  Copyright © 2015 com.sunshuaiqi. All rights reserved.
 //
 
